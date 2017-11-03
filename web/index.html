@@ -629,7 +629,7 @@
 						}else{
 
 							if(data['captain']){
-								alert('队长产生');
+								alert(data['captain']['uid']+ '成为队长');
 							}else{
 								if(data['next_info']['next'] == my_turn){
 									callCaptain(now_price);
@@ -639,6 +639,9 @@
 							}
 						}
 						
+						break;
+					case 'moneyRefresh':
+						moneyRefresh(data['turn'],data['gold']);
 						break;
 					// 用户退出 更新用户列表
 					case 'logout':
@@ -757,6 +760,12 @@
 					$('#userpanel'+turn).html('<h2>'+ client_list[u]['gold'] +'</h2>');					
 				}
 				
+			}
+
+			// 更新玩家金币
+			function moneyRefresh(turn,num){
+				str = '<h2>'+ num +'</h2>'
+				$('#userpanel'+turn).html(str);
 			}
 			
 			function start(){

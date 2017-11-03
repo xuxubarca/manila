@@ -561,7 +561,8 @@ class Events
                         self::$rd->set($room_status_key,serialize($room_status));
 
                         $new_message['captain']['uid'] = $captain;   
-                        $new_message['captain']['num'] = $now_price; 
+                        $new_message['captain']['num'] = $now_price;
+                        $new_message['captain']['turn'] = $captain_turn;
                     }else{
                         //报错
 
@@ -709,7 +710,7 @@ class Events
             }
             $userInfo['gold'] = $gold;
             self::$rd->hset($room_key,$uid,serialize($userInfo));
-
+            self::moneyRefresh($uid,$room_id);
             return true;
         }else{
             return false;
@@ -726,6 +727,24 @@ class Events
 
         return $gold;
 
+   }
+   // 刷新玩家金币显示
+   public static function moneyRefresh($uid,$room_id){
+
+        $gold = self::getMoney($uid,$room_id);
+
+        $room_status_key = "m_room_status_{$room_id}";//房间状态
+        $room_status = unserialize(self::$rd->get($room_status_key));
+        $turn = array_search($uid,$room_status['turn']);
+        $new_message = array(
+            'type'=>'moneyRefresh',
+            'from_client_id'=>$client_id,
+            'to_client_id'=>'all',
+            'uid'=>$uid,
+            'gold'=>$gold,
+            'turn'=>$turn,
+        );
+        return Gateway::sendToGroup($room_id ,json_encode($new_message));
    }
   
 }
