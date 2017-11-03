@@ -149,6 +149,7 @@ class Events
                     'step'=>0, 1 叫地主 2 选货物 
                     'price_info'=>array('uid'=>$uid,'num'=>$price),
                     'give_up'=>array($uid=>0,$uid=>0),
+                    'captain'=>$uid,
                 )
 
 
@@ -185,7 +186,7 @@ class Events
 
                 }else{ //玩家首次进入
 
-                     if($room_status['status']==1){ //比赛已开始
+                     if(isset($room_status['status'])&&$room_status['status']==1){ //比赛已开始
                         $goToNewRoom = true;
                      }else{
                         $saveInfo = true;
@@ -392,20 +393,51 @@ class Events
                 $room_status_key = "m_room_status_{$room_id}";//房间状态
                 $room_status = unserialize(self::$rd->get($room_status_key));
 
-                $now_price = 0;
-                $caption = null;
-                if(isset($room_status['price_info'])){
-                    $now_price = $room_status['price_info']['num'];
-                    $caption = $room_status['price_info']['uid'];
+                $step = 0;
+                if(isset($room_status['step'])){
+                    $step = $room_status['step'];
+                }
+                if($step != 1){
+                    return;
                 }
 
-                if($message_data['price']<=$now_price){
+                $now_price = 0;
+                $captain = null;
+                if(isset($room_status['price_info'])){
+                    $now_price = $room_status['price_info']['num'];
+                    $captain = $room_status['price_info']['uid'];
+                }
+
+
+                if($message_data['price']<=$now_price){ //报价不高于当前最高价
+                    $new_message = array(
+                        'type'=>'callCaptain',
+                        'message'=>'money_not_enough',
+                        'from_client_id'=>$client_id,
+                        'to_client_id'=>'all',
+                        'price'=>$now_price,
+                    );
+                    Gateway::sendToCurrentClient(json_encode($new_message));
                     return;
                 }else{
                     $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
                     $uid_to_clients = self::$rd -> hgetall($player_key);
                     $uid = array_search($client_id, $uid_to_clients);
-                    if($uid==$caption){ //检查是不是已经产生队长
+
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold<$message_data['price']){
+                        $new_message = array(
+                            'type'=>'callCaptain',
+                            'message'=>'no_money',
+                            'from_client_id'=>$client_id,
+                            'to_client_id'=>'all',
+                            'price'=>$now_price,
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+
+                    if($uid==$captain){ //检查是不是已经产生队长
                         
                     }else{
                         $room_status['price_info']['num'] = $message_data['price'];
@@ -426,7 +458,6 @@ class Events
                         if($turn[$now] != $uid){
                             return;
                         }
-                        //file_put_contents("/mylog.log",$now.'====='.json_encode($turn)."\r\n\r\n",FILE_APPEND);
                         $nextInfo = self::getNextPlayer($now,$turn,$give_up);
 
 
@@ -446,18 +477,17 @@ class Events
                 }
                 
 
-
-
                 $new_message = array(
                     'type'=>'callCaptain',
                     'from_client_id'=>$client_id,
                     'to_client_id'=>'all',
                     'next_info'=>$nextInfo,
                     'price'=>$message_data['price'],
+                    'highest'=>$uid,
                 );
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            //放弃地主
+            //放弃队长
             case 'giveUp':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -472,14 +502,23 @@ class Events
 
                 $room_status_key = "m_room_status_{$room_id}";//房间状态
                 $room_status = unserialize(self::$rd->get($room_status_key));
+
+                $step = 0;
+                if(isset($room_status['step'])){
+                    $step = $room_status['step'];
+                }
+                if($step != 1){
+                    return;
+                }
+
                 $turn = $room_status['turn'];
                 $now = $room_status['now'];
 
                 $now_price = 0;
-                $caption = null;
+                $captain = null;
                 if(isset($room_status['price_info'])){
                     $now_price = $room_status['price_info']['num'];
-                    $caption = $room_status['price_info']['uid'];
+                    $captain = $room_status['price_info']['uid'];
                 }
 
 
@@ -507,13 +546,26 @@ class Events
                     
                 );
 
+                if(count($turn) - count($room_status['give_up']) == 1){ //产生队长
+                    //扣钱
+                    $res = self::addMoney($captain,$room_id,$now_price,2);
 
-                if(count($turn) - count($give_up) == 1){ //产生队长
-                     $new_message['caption']['uid'] = $caption;   
-                     $new_message['caption']['num'] = $now_price;  
-                     //扣钱
-                     
+                    if($res){
+                        // 初始化数据 进入下一阶段
+                        $captain_turn = array_search($captain, $turn);
+                        $room_status['now'] = $captain_turn; 
+                        $room_status['give_up'] = array(); 
+                        $room_status['price'] = 0; 
+                        $room_status['captain'] = $captain;
+                        $room_status['step'] = 2;
+                        self::$rd->set($room_status_key,serialize($room_status));
 
+                        $new_message['captain']['uid'] = $captain;   
+                        $new_message['captain']['num'] = $now_price; 
+                    }else{
+                        //报错
+
+                    } 
                 }else{
                     $nextInfo = self::getNextPlayer($now,$turn,$give_up);   
                     $next = $nextInfo['next'];
@@ -561,7 +613,6 @@ class Events
                     'content'=>nl2br(htmlspecialchars($message_data['content'])),
                     'time'=>date('Y-m-d H:i:s'),
                 );
-                //file_put_contents("/mylog.log",json_encode($new_message)."----------\r\n",FILE_APPEND);
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
         }
    }
@@ -585,6 +636,7 @@ class Events
        }
    }
 
+   // 下一回合操作的玩家
    public static function getNextPlayer($now,$turn,$give_up=null){
 
         $playNum = count($turn) - 1; //从0开始
@@ -626,6 +678,53 @@ class Events
             return $info;
         }
      
+
+   }
+   /*
+
+    房间信息:  m_room_{$room_id} Hash
+    uid => array(
+        'gold'=>30,
+        'name'=>$uid,
+        'stock'=>array(0=>1, 1=>3,),  //1~4 四种股票
+        'worker'=>3, 工人数量
+        'client_id'=>$client_id,
+        'uid'=>$uid,
+    ) 
+
+   */
+   // 加减金币
+   public static function addMoney($uid,$room_id,$num,$type){
+        if($num>0){
+            $room_key = "m_room_{$room_id}";//房间信息
+            $userInfo = unserialize(self::$rd->hget($room_key,$uid));
+            $gold = $userInfo['gold'];
+            if($type==1){ //加
+                $gold += $num;
+            }elseif($type==2){ //减
+                $gold -= $num;
+            }
+            if($gold<0){
+                return false;
+            }
+            $userInfo['gold'] = $gold;
+            self::$rd->hset($room_key,$uid,serialize($userInfo));
+
+            return true;
+        }else{
+            return false;
+        }
+
+   }
+   // 获取当前金币
+   public static function getMoney($uid,$room_id){
+
+        $room_key = "m_room_{$room_id}";//房间信息
+        $userInfo = unserialize(self::$rd->hget($room_key,$uid));
+
+        $gold = $userInfo['gold'];
+
+        return $gold;
 
    }
   

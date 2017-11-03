@@ -60,12 +60,13 @@
 			}
 			
 			#price {
-				/*position: relative;*/
+				text-align:center;
 				position: absolute;
 				left: 3%;
 				top: 49px;
 				width: 200px;
 				height: 50px;
+				line-height: 50px;
 				background-color: rgba(255,255,255, 0.5);
 				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
 			}
@@ -559,6 +560,8 @@
 				document.querySelectorAll('#list > div')[21].style.background = 'yellow';
 				document.querySelectorAll('#list > div')[22].style.background = 'green';
 				document.querySelectorAll('#list > div')[23].style.background = 'red';
+
+				
 			}
 			
 			
@@ -617,11 +620,25 @@
 						if(data['price'] > 0){
 							now_price = data['price'];
 						}
-
-						
-						if(data['next_info']['next'] == my_turn){
+						if(data['message'] == 'no_money'){
+							alert('金币不足');
 							callCaptain(now_price);
+						}else if(data['message'] == 'money_not_enough'){
+							alert('金额小于当前出价');
+							callCaptain(now_price);
+						}else{
+
+							if(data['captain']){
+								alert('队长产生');
+							}else{
+								if(data['next_info']['next'] == my_turn){
+									callCaptain(now_price);
+								}
+								getCaptainMessage(now_price,data['highest']);
+								nowTurn(data['next_info']['next']);
+							}
 						}
+						
 						break;
 					// 用户退出 更新用户列表
 					case 'logout':
@@ -713,6 +730,22 @@
 					},
 				});
 			}
+			// 显示当前叫地主最高价
+			function getCaptainMessage(price,captain){
+
+				var str = '当前最高报价：'+ captain + ' ' + price;
+				$('#price').html(str);
+			}
+			// 当前回合玩家
+			function nowTurn(turn){
+
+				$('#player div').each(function(i){
+					$(this).css({'background-color' : "#FFFFFF"});	
+				})
+
+				$('#user'+turn).css("background-color","#FF8C00");
+			}
+
 			
 			// 更新玩家列表
 			function getPlayerList(client_list){
