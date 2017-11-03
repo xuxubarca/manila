@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>马尼拉 1.0</title>
+		<script src="./js/jquery-1.10.2.js"></script>
+		<script src="./js/postbirdAlertBox.min.js"></script>
+		<link rel="stylesheet" href="./css/postbirdAlertBox.css">
+		<style type="text/css">
+			body {
+				/*box-sizing: border-box;*/
+				margin: 0;
+				padding: 0;
+				background: url('img/bg.png') repeat;
+			}
+
+
+			#box {
+				/*position: relative;*/
+				position: absolute;
+				left: 20%;
+				top: 49px;
+				width: 1200px;
+				height: 600px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			#box .div1 {
+				text-align:center;
+				position: absolute;
+				width: 120px;
+				height: 60px;
+				line-height: 60px;
+				/*border: 1px solid #000;*/
+				transform: rotate(0);
+				transition: 0.25s;
+				overflow: hidden;
+			}
+			#box .div2 {
+				text-align:center;
+				position: absolute;
+				width: 60px;
+				height: 120px;
+				line-height: 120px;
+				/*border: 1px solid #000;*/
+				transform: rotate(0);
+				transition: 0.25s;
+				overflow: hidden;
+			}
+			
+			#list {
+				/*position: relative;*/
+				position: absolute;
+				left: 86%;
+				top: 49px;
+				width: 200px;
+				height: 300px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			
+			#price {
+				/*position: relative;*/
+				position: absolute;
+				left: 3%;
+				top: 49px;
+				width: 200px;
+				height: 50px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+
+			.ship1 {
+				position:absolute;
+				border: 1px solid #000;
+				width: 240px;
+				height: 60px;
+				margin-top:150px;
+				margin-left:-180px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			.ship2 {
+				position:absolute;
+				border: 1px solid #000;
+				width: 240px;
+				height: 60px;
+				margin-top:270px;
+				margin-left:-180px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			.ship3 {
+				position:absolute;
+				border: 1px solid #000;
+				width: 240px;
+				height: 60px;
+				margin-top:390px;
+				margin-left:-180px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			
+			#list .div3 {
+				position: absolute;
+				width: 50px;
+				height: 50px;
+				line-height: 50px;
+				border: 1px solid #000;
+				transform: rotate(0);
+				transition: 0.25s;
+				overflow: hidden;
+			}
+			
+			#stock {
+				position: absolute;
+				left: 85%;
+				top: 598px;
+				width: 250px;
+				height: 50px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			
+			}
+			
+			.ship {
+				position: absolute;
+				width: 60px;
+				height: 60px;
+				border: 1px solid #000;
+				transform: rotate(0);
+				transition: 0.25s;
+			}
+			.myStock{
+			
+				position: absolute;
+				width: 50px;
+				height: 50px;
+				border: 1px solid #000;
+				transform: rotate(0);
+				transition: 0.25s;
+			}
+			#box .clDiv{
+				transition: 1s !important;
+				transform: rotate(0deg) translateX(0px) translateY(0px);
+				width: 12.5px !important;
+				height: 12.5px !important;
+				border: none !important;
+			}
+			
+			#player {
+				position: absolute;
+				left: 20%;
+				top: 700px;
+				width: 1200px;
+				height: 200px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			
+			}
+			
+			.user {
+				/*position: absolute;
+				left: 20%;
+				top: 700px;
+				*/
+				margin-top:10px;
+				margin-left:15px;
+				float:left;
+				width: 183px;
+				height: 180px;
+				background-color: rgba(255,255,255, 0.5);
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+				display:none;
+			
+			}
+			
+			.username {
+				text-align:center;
+				margin-top: 5px;
+				margin-left:10.5px;
+				width: 160px;
+				height: 80px;
+				line-height: 80px;
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			.userpanel{
+				text-align:center;
+				margin-top: 10px;
+				margin-left:10.5px;
+				width: 160px;
+				height: 80px;
+				line-height: 80px;
+				box-shadow: 0px 0px 5px 5px rgba(0,0,0, 0.6);
+			}
+			
+			/* 骰子 */
+			.point{
+				width: 276px; 
+				height: 135px; 
+				margin: 120px auto 30px auto; 
+				position: absolute;
+				left: 3%;
+				top: 450px;
+				display:none;
+			}
+			.dice1{
+				width: 90px; 
+				height: 90px; 
+				background: url(img/dice.png) no-repeat; 
+				cursor: pointer;
+				float: left;
+				border: 1px solid #000;
+			}
+			.dice2{
+				width: 90px; 
+				height: 90px; 
+				background: url(img/dice.png) no-repeat; 
+				cursor: pointer;
+				float: left;
+				border: 1px solid #000;
+			}
+			.dice3{
+				width: 90px; 
+				height: 90px; 
+				background: url(img/dice.png) no-repeat; 
+				cursor: pointer;
+				float: left;
+				border: 1px solid #000;
+			}
+			
+			.pcolor{
+				width: 90px; 
+				height: 30px; 
+				cursor: pointer;
+				float: left;
+				border: 1px solid #000;
+			}
+			.dice_1{
+				background-position:-5px -4px
+			}
+			.dice_2{
+				background-position:-5px -107px
+			}
+			.dice_3{
+				background-position:-5px -212px
+			}
+			.dice_4{
+				background-position:-5px -317px
+			}
+			.dice_5{
+				background-position:-5px -427px
+			}
+			.dice_6{
+				background-position:-5px -535px
+			}
+			.dice_t{
+				background-position:-5px -651px
+			}
+			.dice_s{
+				background-position:-5px -763px
+			}
+			.dice_e{
+				background-position:-5px -876px
+			}
+			p#result{
+				text-align:center; font-size:16px
+			}
+			p#result span{
+				font-weight:bold; color:#f30; 
+				margin:6px
+			}
+			
+			/* 骰子 END*/
+			
+			
+			
+		</style>
+		
+		<script type="text/javascript">
+
+			$(function(){
+				var point = $(".point");
+				point.click(function(){
+				
+					ws.send('{"type":"manilaPoint","num":"3"}');
+					
+				});
+			});
+
+			function playPoint(pointArr){
+			
+					var a = '#dice1';
+					var c = 'dice1';
+					var n = pointArr[1];
+					getPoint(a,c,n);
+					
+					var a = '#dice2';
+					var c = 'dice2';
+					var n = pointArr[2];
+					getPoint(a,c,n);
+					
+					var a = '#dice3';
+					var c = 'dice3';
+					var n = pointArr[3];
+					getPoint(a,c,n);
+			}
+			
+			function getPoint(a,c,num){
+				//var c = '#'+ a;
+				var b = $(a);
+				
+				b.attr("class",c);//清除上次动画后的点数
+				//dice1.css('cursor','default');
+				//var num = Math.floor(Math.random()*6+1);//产生随机数1-6
+				b.animate({left: '+2px'}, 100,function(){
+					b.addClass("dice_t");
+				}).delay(200).animate({top:'-2px'},100,function(){
+					b.removeClass("dice_t").addClass("dice_s");
+				}).delay(200).animate({opacity: 'show'},600,function(){
+					b.removeClass("dice_s").addClass("dice_e");
+				}).delay(100).animate({left:'-2px',top:'2px'},100,function(){
+					b.removeClass("dice_e").addClass("dice_"+num);
+					$("#result").html("您掷得点数是<span>"+num+"</span>");
+					//dice1.css('cursor','pointer');
+				});
+			
+			}
+		</script>
+	</head>
+	<body onload="showPrompt();">
+	
+		<script type="text/javascript">
+			var uid;
+			var tetris = {
+				// 父容器
+				box: null,//document.getElementById('box'),
+
+				// 时间间隔、定时器
+				step: 500,
+				timer: null,
+				// 游戏面板，数组 对应 div
+				board: null,
+				boardDiv: null,
+				//webSocket
+				ws:{},
+				// 初始化
+				init: function() {
+					this.webSocket();
+					this.createBox();
+
+				},
+				
+				 // 连接服务端
+				webSocket: function() {
+				   // 创建websocket
+				   ws = new WebSocket("ws://192.168.1.10:7272");
+				   // 当socket连接打开时，输入用户名
+				   ws.onopen = onopen;
+				   // 当有消息时根据消息类型显示不同信息
+				   ws.onmessage = onmessage; 
+				   ws.onclose = function() {
+					  console.log("连接关闭，定时重连");
+				   };
+				   ws.onerror = function() {
+					  console.log("出现错误");
+				   };
+				},
+				
+
+
+				// 创建容器
+				createBox: function() {
+					var str = '';
+					/* 主面板 */
+					this.box = document.createElement('div');
+					this.box.id = 'box';
+					
+					//this.board = new Array(20);
+					for (var i = 0; i < 2; i++) {
+						//this.board[i] = new Array(4);
+						for (var j = 0; j < 10; j++) {
+							//this.board[i][j] = 0;
+							str += '<div class="div1" style="left:' + j*120 + 'px;top:' + i*60 + 'px"></div>';
+						}
+					}
+					
+					//this.board = new Array(20);
+					for (var i = 1; i < 4; i++) {
+						//this.board[i] = new Array(4);
+						for (var j = 0; j < 20; j++) {
+							//this.board[i][j] = 0;
+							str += '<div class="div2" style="left:' + j*60 + 'px;top:' + i*120 + 'px"></div>';
+						}
+					}
+
+					//this.board = new Array(20);
+					for (var i = 8; i < 10; i++) {
+						//this.board[i] = new Array(4);
+						for (var j = 0; j < 10; j++) {
+							//this.board[i][j] = 0;
+							str += '<div class="div1" style="left:' + j*120 + 'px;top:' + i*60 + 'px"></div>';
+						}
+					}
+					str += '<div class="ship1">';
+					for (var j = 0; j < 4; j++) {
+						str += '<div class="ship" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					}
+					str += '</div>';
+					str += '<div class="ship2">';
+					for (var j = 0; j < 4; j++) {
+						str += '<div class="ship" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					}
+					str += '</div>';
+					str += '<div class="ship3" >';
+					for (var j = 0; j < 4; j++) {
+						str += '<div class="ship" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					}
+					str += '</div>';
+					this.box.innerHTML = str;
+					document.body.appendChild(this.box);
+					this.boardDiv = document.querySelectorAll('#box > div');
+					
+					/* 股票面板 */
+					var str = '';
+					this.box = document.createElement('div');
+					this.box.id = 'list';
+					//this.board = new Array(6);
+					for (var i = 0; i < 6; i++) {
+						//this.board[i] = new Array(4);
+						for (var j = 0; j < 4; j++) {
+							//this.board[i][j] = 0;
+							str += '<div class="div3" style="left:' + j*50 + 'px;top:' + i*50 + 'px"></div>';
+						}
+					}
+					this.box.innerHTML = str;
+					document.body.appendChild(this.box);
+					
+					
+					/* 我的股票 */
+					/*
+					var str = '';
+					this.box = document.createElement('div');
+					this.box.id = 'stock';
+					for (var j = 0; j < 5; j++) {
+						str += '<div class="myStock" style="left:' + j*50 + 'px;top:' + 0 + 'px"></div>';
+					}
+					this.box.innerHTML = str;
+					document.body.appendChild(this.box);
+					*/
+					/* 玩家列表 */
+					var str = '';
+					this.box = document.createElement('div');
+					this.box.id = 'player';
+					this.box.innerHTML = str;
+					document.body.appendChild(this.box);
+					
+					var str = '';
+					
+					for(var i = 0; i <=5; i++){
+						str += '<div class="user" id="user' + i +'"><div class="username" id="username'+ i +'"></div> <div class="userpanel" id="userpanel'+ i +'"></div></div>';
+					}
+
+					$('#player').html(str);
+	
+					
+					$(".point").css('display','block'); 
+
+
+					/* 叫地主提示板 */
+					var str = '';
+					this.box = document.createElement('div');
+					this.box.id = 'price';
+					this.box.innerHTML = str;
+					document.body.appendChild(this.box);
+
+				},
+
+			}
+			
+			/* 初始化地图区域 */
+			function initLocation(){
+			
+				/* 棋盘坐标： 20~33 40~53 60~73   */
+				var j = 0;
+				for(var i = 20; i < 34; i++){
+					document.querySelectorAll('#box > div')[i].innerHTML = '<p>'+ j +'</p>';
+					document.querySelectorAll('#box > div')[i].style.border="2px solid #2894FF";
+					j++;
+				}
+				var j = 0;
+				for(var i = 40; i < 54; i++){
+					document.querySelectorAll('#box > div')[i].innerHTML = '<p>'+ j +'</p>';
+					document.querySelectorAll('#box > div')[i].style.border="2px solid #2894FF";
+					j++;
+				}
+				var j = 0;
+				for(var i = 60; i < 74; i++){
+					document.querySelectorAll('#box > div')[i].innerHTML = '<p>'+ j +'</p>';
+					document.querySelectorAll('#box > div')[i].style.border="2px solid #2894FF";
+					j++;
+				}
+				
+				/* 港口船位 17 18 19*/
+				for(var i = 17; i < 20; i++){
+					document.querySelectorAll('#box > div')[i].style.border="2px solid #F75000";
+				}
+				/* 修理船位 87 88 89*/
+				for(var i = 87; i < 90; i++){
+					document.querySelectorAll('#box > div')[i].style.border="2px solid #F75000";
+				}
+				/* 海盗坐标：6 16*/
+				document.querySelectorAll('#box > div')[6].style.border="2px solid #000000";
+				document.querySelectorAll('#box > div')[16].style.border="2px solid #000000";
+				document.querySelectorAll('#box > div')[6].innerHTML = '<p> 小海盗（-5） </p>';
+				document.querySelectorAll('#box > div')[16].innerHTML = '<p> 大海盗（-5） </p>';
+				
+				/* 领航员坐标：3 4 */
+				document.querySelectorAll('#box > div')[3].style.border="2px solid #9AFF02";
+				document.querySelectorAll('#box > div')[4].style.border="2px solid #9AFF02";
+				document.querySelectorAll('#box > div')[3].innerHTML = '<p> 大领航员（-5） </p>';
+				document.querySelectorAll('#box > div')[4].innerHTML = '<p> 小领航员（-2） </p>';
+				/* 保险公司坐标：92 */
+				document.querySelectorAll('#box > div')[92].style.border="2px solid #FFDC35";
+				document.querySelectorAll('#box > div')[92].innerHTML = '<p> 保险（+10） </p>';
+				
+				document.querySelectorAll('#box > div')[3].innerHTML = '<p> 6 </p>';
+				document.querySelectorAll('#box > div')[4].innerHTML = '<p> 8</p>';
+				
+				document.querySelectorAll('#box > div')[7].innerHTML = '<p> 6 </p>';
+				document.querySelectorAll('#box > div')[8].innerHTML = '<p> 8</p>';
+				document.querySelectorAll('#box > div')[9].innerHTML = '<p> 15 </p>';
+				
+				document.querySelectorAll('#box > div')[17].innerHTML = '<p> A (-4) </p>';
+				document.querySelectorAll('#box > div')[18].innerHTML = '<p> B (-3)</p>';
+				document.querySelectorAll('#box > div')[19].innerHTML = '<p> C (-2) </p>';
+				
+				document.querySelectorAll('#box > div')[89].innerHTML = '<p> A (-4) </p>';
+				document.querySelectorAll('#box > div')[88].innerHTML = '<p> B (-3)</p>';
+				document.querySelectorAll('#box > div')[87].innerHTML = '<p> C (-2) </p>';
+				
+				document.querySelectorAll('#box > div')[99].innerHTML = '<p> 6 </p>';
+				document.querySelectorAll('#box > div')[98].innerHTML = '<p> 8</p>';
+				document.querySelectorAll('#box > div')[97].innerHTML = '<p> 15 </p>';
+							
+				
+				for(var i=0;i<=3;i++){
+					document.querySelectorAll('#list > div')[i].innerHTML = '<p> 30 </p>';
+					document.querySelectorAll('#list > div')[i+4].innerHTML = '<p> 20 </p>';
+					document.querySelectorAll('#list > div')[i+8].innerHTML = '<p> 10 </p>';
+					document.querySelectorAll('#list > div')[i+12].innerHTML = '<p> 5 </p>';
+					document.querySelectorAll('#list > div')[i+16].innerHTML = '<p> 0 </p>';
+				}
+				//for(var i = 0; i < 100; i++){
+					//document.querySelectorAll('#box > div')[i].innerHTML = '<p>'+ i +'</p>';
+				//}
+				
+				document.querySelectorAll('#list > div')[20].style.background = 'blue';
+				document.querySelectorAll('#list > div')[21].style.background = 'yellow';
+				document.querySelectorAll('#list > div')[22].style.background = 'green';
+				document.querySelectorAll('#list > div')[23].style.background = 'red';
+			}
+			
+			
+			/* 初始化地图数据 */
+			function initData(){
+			
+				
+			
+			}
+			
+
+			
+			
+			// 连接建立时发送登录信息
+			function onopen()
+			{
+				// 登录
+				var login_data = '{"type":"manilaLogin","room_id":"2","uid":"'+ uid +'"}';
+				//var login_data = '{"type":"logintest","room_id":2}';
+				console.log("websocket握手成功，发送登录数据:"+login_data);
+				ws.send(login_data);
+			}
+			
+			var my_turn;
+			// 服务端发来消息处理
+			function onmessage(e)
+			{
+				console.log(e.data);
+				var data = eval("("+e.data+")");
+				switch(data['type']){
+					// 服务端ping客户端
+					case 'ping':
+						ws.send('{"type":"pong"}');
+						break;
+					//登录
+					case 'manilaLogin':
+						console.log(data['client_name']+"登录成功");
+						if(data['my_id']){
+							my_turn = data['my_turn'];
+							ws.send('{"type":"map"}');
+						}
+						break;
+					//同步地图信息
+					case 'map':
+						var client_list = data['clients_list'];
+						getPlayerList(client_list);
+						
+						break;
+					//掷骰子
+					case 'manilaPoint':
+						playPoint(data['point']);
+						break;
+					//叫地主
+					case 'callCaptain':
+						var now_price = 0;
+						if(data['price'] > 0){
+							now_price = data['price'];
+						}
+
+						
+						if(data['next_info']['next'] == my_turn){
+							callCaptain(now_price);
+						}
+						break;
+					// 用户退出 更新用户列表
+					case 'logout':
+						//say(data['from_client_id'], data['from_client_name'], data['from_client_name']+' 退出了', data['time']);
+						//delete client_list[data['from_client_id']];
+						//flush_client_list(data);
+						
+						
+				}
+			}
+			
+			
+			/*
+			$(document).ready(function(){
+			  $("button").click(function(){
+				$(".ship1").animate({left:'500px'});
+				
+				
+				$('.ship1').animate({  borderSpacing: -90 }, {    step: function(now,fx) {
+     				$(this).css('-webkit-transform','rotate('+now+'deg)');      
+					$(this).css('-moz-transform','rotate('+now+'deg)');      
+					$(this).css('-ms-transform','rotate('+now+'deg)');
+    				$(this).css('-o-transform','rotate('+now+'deg)');      
+					$(this).css('transform','rotate('+now+'deg)');      },
+   				duration:'slow' },'linear');
+				
+				$(".ship1").animate({top:'-100px'});
+				
+			  });
+			});
+			*/
+			//登录弹窗
+			function showPrompt() {
+				PostbirdAlertBox.prompt({
+					'title': '输入账号',
+					'okBtn': '提交',
+					onConfirm: function (data) {
+						console.log("输入框内容是：" + data);
+						var reg = /^[\da-zA-Z]+$/;
+						if(!reg.test(data)){
+							alert('不支持中文');
+							location.reload();
+						}else{
+							uid = data;
+							tetris.init();
+							initLocation();
+						}
+						
+					},
+					onCancel: function (data) {
+						console.log("输入框内容是：" + data);
+						window.opener=null;
+						window.close();
+					},
+				});
+			}
+			
+			//叫地主
+			function callCaptain(nowPrice) {
+				PostbirdAlertBox.prompt({
+					'title': '输入金额',
+					'okBtn': '提交',
+					onConfirm: function (data) {
+						console.log("输入框内容是：" + data);
+						
+						var reg = /^[1-9]*[1-9][0-9]*$/;
+						if(!reg.test(data)){
+							alert('必须是整数');
+							captain(nowPrice);
+						}else{
+							if(data>nowPrice){
+								
+								// 报价
+								var price_data = '{"type":"price","price":"'+ data +'"}';
+								ws.send(price_data);
+								
+							}else{
+								alert('金额小于当前出价');
+								captain(nowPrice);
+							}
+							
+						}
+						
+					},
+					onCancel: function (data) { //放弃
+						var give_up_data = '{"type":"giveUp"}';
+						ws.send(give_up_data);
+
+					},
+				});
+			}
+			
+			// 更新玩家列表
+			function getPlayerList(client_list){
+				
+				for(var u in client_list){
+					var turn = client_list[u]['turn'];
+					$("#user"+turn).css('display','block');
+					$('#username'+turn).html('<h2>'+ u +'</h2>');
+					$('#userpanel'+turn).html('<h2>'+ client_list[u]['gold'] +'</h2>');					
+				}
+				
+			}
+			
+			function start(){
+				ws.send('{"type":"start"}');
+
+			}
+		</script>
+
+	    <div class="point">
+			<div id="dice1" class="dice1 dice_1"></div>
+			<div id="dice2" class="dice2 dice_1"></div>
+			<div id="dice3" class="dice3 dice_1"></div>					   		
+			<div class="pcolor" ></div>
+			<div class="pcolor" ></div>
+			<div class="pcolor" ></div>
+		</div>
+		
+		<input type="button" onclick="start()" value="start">
+		<!--<div class="next"></div>-->
+	</body>
+</html>
