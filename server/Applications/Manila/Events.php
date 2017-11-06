@@ -34,6 +34,7 @@ class Events
      * 新建一个类的静态成员，用来保存数据库实例
      */
     public static $rd = null;
+    public static $gameConf;
     /**
      * 进程启动后初始化数据库连接
      */
@@ -41,6 +42,7 @@ class Events
     {
         self::$rd = new Redis();
         self::$rd ->connect('127.0.0.1', 6379);
+        self::$gameConf = require_once __DIR__."/Config/Game.php";
     }
 
 
@@ -150,6 +152,7 @@ class Events
                     'price_info'=>array('uid'=>$uid,'num'=>$price),
                     'give_up'=>array($uid=>0,$uid=>0),
                     'captain'=>$uid,
+                    'goods'=>array(1=>0,2=>0,3=>0),// 1~4种货物
                 )
 
 
@@ -420,9 +423,11 @@ class Events
                     Gateway::sendToCurrentClient(json_encode($new_message));
                     return;
                 }else{
-                    $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
-                    $uid_to_clients = self::$rd -> hgetall($player_key);
-                    $uid = array_search($client_id, $uid_to_clients);
+                    //$player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
+                    //$uid_to_clients = self::$rd -> hgetall($player_key);
+                    //$uid = array_search($client_id, $uid_to_clients);
+
+                    $uid = self::getUid($room_id,$client_id);
 
                     $myGold = self::getMoney($uid,$room_id);
                     if($myGold<$message_data['price']){
@@ -466,7 +471,7 @@ class Events
                             $nextUid = $nextInfo['next_uid'];
                             $room_status['now'] = $next;
                             self::$rd->set($room_status_key,serialize($room_status));
-                        }else{//成为队长
+                        }else{// TODO 成为队长
 
 
 
@@ -496,9 +501,10 @@ class Events
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
 
-                $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
-                $uid_to_clients = self::$rd -> hgetall($player_key);
-                $uid = array_search($client_id, $uid_to_clients);
+                // $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
+                // $uid_to_clients = self::$rd -> hgetall($player_key);
+                // $uid = array_search($client_id, $uid_to_clients);
+                $uid = self::getUid($room_id,$client_id);
 
                 $room_status_key = "m_room_status_{$room_id}";//房间状态
                 $room_status = unserialize(self::$rd->get($room_status_key));
@@ -564,7 +570,7 @@ class Events
                         $new_message['captain']['num'] = $now_price;
                         $new_message['captain']['turn'] = $captain_turn;
                     }else{
-                        //报错
+                        // TODO 报错
 
                     } 
                 }else{
@@ -579,6 +585,67 @@ class Events
 
 
                
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+            // 选择货物
+            case 'chooseGoods':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+                $captain = $room_status['captain'];
+                $uid = self::getUid($room_id,$client_id);
+                if($captain != $uid){
+                    return;
+                }
+
+                if(isset($message_data['goods'])){
+                    $goodsId = $message_data['goods'];
+                }else{
+                    return;
+                }
+
+                $step = 0;
+                if(isset($room_status['step'])){
+                    $step = $room_status['step'];
+                }
+                if($step != 2){
+                    return;
+                }
+
+                $goodsArr = array();
+                if(isset($room_status['goods'])){
+                    $goodsArr = $room_status['goods'];
+                }
+
+                if(count($goodsArr) >=3){
+                    return;
+                }
+                if(isset($goodsArr[$goodsId])){
+                    return;
+                }
+
+                $room_status['goods'][$goodsId] = 0;
+
+                self::$rd->set($room_status_key,serialize($room_status));
+
+                $new_message = array(
+                    'type'=>'chooseGoods', 
+                    'from_client_id'=>$client_id,
+                    'from_client_name' =>$client_name,
+                    'to_client_id'=>'all',
+                    'goodsId'=>$goodsId,
+                ); 
+
+                if(count($room_status['goods']) >= 3){ //选完
+                    $new_message['finish'] = 1;
+                }
+
+                
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
             //发言
             case 'say':
@@ -745,6 +812,19 @@ class Events
             'turn'=>$turn,
         );
         return Gateway::sendToGroup($room_id ,json_encode($new_message));
+   }
+   //通过客户端ID 获取玩家UID
+   public function getUid($room_id,$client_id){
+
+        $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
+        $uid_to_clients = self::$rd -> hgetall($player_key);
+        $uid = array_search($client_id, $uid_to_clients);
+        if($uid){
+            return $uid;
+        }else{
+            return false;
+        }
+        
    }
   
 }
