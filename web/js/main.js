@@ -120,11 +120,12 @@ function callCaptain(nowPrice) {
 		'okBtn': '提交',
 		onConfirm: function (data) {
 			console.log("输入框内容是：" + data);
-			
+			data = parseInt(data);
+			nowPrice = parseInt(nowPrice);
 			var reg = /^[1-9]*[1-9][0-9]*$/;
 			if(!reg.test(data)){
 				alert('必须是整数');
-				captain(nowPrice);
+				callCaptain(nowPrice);
 			}else{
 				if(data>nowPrice){
 					
@@ -134,7 +135,7 @@ function callCaptain(nowPrice) {
 					
 				}else{
 					alert('金额小于当前出价');
-					captain(nowPrice);
+					callCaptain(nowPrice);
 				}
 				
 			}
@@ -204,17 +205,18 @@ function endChooseGoods(){
 }
 // 选择货物
 function chooseGoods(goods){
-	ws.send('{"type":"chooseGoods","id":"'+ goods +'"}');
+	ws.send('{"type":"chooseGoods","goods":"'+ goods +'"}');
 }
 // 被选
-function choosed(goodsId){
-	var n = parseInt + 19;
+function choosed(goodsInfo){
+	var n = parseInt(goodsInfo['id']) + 19;
 	document.querySelectorAll('#list > div')[n].removeAttribute("onclick");
-	document.querySelectorAll('#list > div')[n].innerHTML = '<p> √ </p>';
-	initShip(goodsId);
+	document.querySelectorAll('#list > div')[n].innerHTML = '<h2> √ </h2>';
+	// var color = document.querySelectorAll('#list > div')[n].style.backgroundColor;
+	initShip(goodsInfo);
 }
 // 初始化货船
-function initShip(goodsId){
+function initShip(goodsInfo){
 	var num = $(".ship").length;
 	if(num >=3){
 		return;
@@ -223,17 +225,48 @@ function initShip(goodsId){
 	var shipId = 'ship' + num;
 	var str = '';
 	str += '<div class="ship" id="'+ shipId +'">';
-	if(goodsId==3){
+	//console.log(goodsInfo['cells']);
+	//return;
+
+	var n = Object.keys(goodsInfo['cells']).length;
+
+	if(goodsInfo['id']==3){
 		for (var j = 0; j < 5; j++) {
-			str += '<div class="shipCell2" style="left:' + j*48 + 'px;top:' + 0 + 'px"></div>';
+			if(n == 0){
+				str += '<div class="shipCell2" id="c'+ n +'" style="left:' + j*48 + 'px;top:' + 0 + 'px"><p>'+ goodsInfo['gold'] +'</p></div>';
+			}else{
+				str += '<div class="shipCell2" id="c'+ n +'" style="left:' + j*48 + 'px;top:' + 0 + 'px"><p>'+ goodsInfo['cells'][n] +'</p></div>';
+			}
+			n--;
 		}
 	}else{
 		for (var j = 0; j < 4; j++) {
-			str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+			if(n == 0){
+				str += '<div class="shipCell" id="c'+ n +'" style="left:' + j*60 + 'px;top:' + 0 + 'px"><p>'+ goodsInfo['gold'] +'</p></div>';
+			}else{
+				str += '<div class="shipCell" id="c'+ n +'" style="left:' + j*60 + 'px;top:' + 0 + 'px"><p>'+ goodsInfo['cells'][n] +'</p></div>';
+			}
+			n--;
 		}
 	}
 	str += '</div>';
 	$('#box').append(str);
+	$('#'+shipId).css("background-color",goodsInfo['color']);
+}
+// 开始选择轮船起点
+function startShipOutset(){
+
+	for(var i = 20; i < 30; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset()");
+	}
+
+	for(var i = 40; i < 50; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset()");
+	}
+
+	for(var i = 60; i < 70; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset()");
+	}
 }
 
 // 更新玩家金币
@@ -254,6 +287,7 @@ function test(){
 function tt(){
 	//alert('!!!!!!!!!');
 	//document.querySelectorAll('#list > div')[20].removeAttribute("onclick");
-	var num = $(".ship").length;
-	alert(num);
+	//var num = $(".ship").length;
+	var color = document.querySelectorAll('#list > div')[20].style.backgroundColor;
+	alert(color);
 }

@@ -602,13 +602,11 @@ class Events
                 if($captain != $uid){
                     return;
                 }
-
                 if(isset($message_data['goods'])){
                     $goodsId = $message_data['goods'];
                 }else{
                     return;
                 }
-
                 $step = 0;
                 if(isset($room_status['step'])){
                     $step = $room_status['step'];
@@ -633,12 +631,14 @@ class Events
 
                 self::$rd->set($room_status_key,serialize($room_status));
 
+                $goodsInfo = self::$gameConf['goods'][$goodsId];
+
                 $new_message = array(
                     'type'=>'chooseGoods', 
                     'from_client_id'=>$client_id,
                     'from_client_name' =>$client_name,
                     'to_client_id'=>'all',
-                    'goodsId'=>$goodsId,
+                    'goods_info'=>$goodsInfo,
                 ); 
 
                 if(count($room_status['goods']) >= 3){ //选完
@@ -814,7 +814,7 @@ class Events
         return Gateway::sendToGroup($room_id ,json_encode($new_message));
    }
    //通过客户端ID 获取玩家UID
-   public function getUid($room_id,$client_id){
+   public static function getUid($room_id,$client_id){
 
         $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
         $uid_to_clients = self::$rd -> hgetall($player_key);
