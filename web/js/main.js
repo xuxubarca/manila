@@ -75,6 +75,10 @@ function initLocation(){
 		//document.querySelectorAll('#box > div')[i].innerHTML = '<p>'+ i +'</p>';
 	//}
 	
+	document.querySelectorAll('#list > div')[16].style.background = 'blue';
+	document.querySelectorAll('#list > div')[17].style.background = 'yellow';
+	document.querySelectorAll('#list > div')[18].style.background = 'green';
+	document.querySelectorAll('#list > div')[19].style.background = 'red';
 	document.querySelectorAll('#list > div')[20].style.background = 'blue';
 	document.querySelectorAll('#list > div')[21].style.background = 'yellow';
 	document.querySelectorAll('#list > div')[22].style.background = 'green';
@@ -253,20 +257,143 @@ function initShip(goodsInfo){
 	$('#box').append(str);
 	$('#'+shipId).css("background-color",goodsInfo['color']);
 }
-// 开始选择轮船起点
-function startShipOutset(){
+// 初始化轮船起点设置
+function initShipOutset(){
+	j = 0;
+	for(var i = 20; i < 26; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(1,"+ j +")");
+		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
+		j++;
+	}
+	j = 0;
+	for(var i = 40; i < 46; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(2,"+ j +")");
+		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
+		j++;
+	}
+	j = 0;
+	for(var i = 60; i < 66; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(3,"+ j +")");
+		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
+		j++;
+	}
+}
+// 结束轮船起点设置
+function endShipOutset(){
 
-	for(var i = 20; i < 30; i++){
-		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset()");
+	j = 0;
+	for(var i = 20; i < 26; i++){
+		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
+		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
+		j++;
+	}
+	j = 0;
+	for(var i = 40; i < 46; i++){
+		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
+		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
+		j++;
+	}
+	j = 0;
+	for(var i = 60; i < 66; i++){
+		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
+		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
+		j++;
 	}
 
-	for(var i = 40; i < 50; i++){
-		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset()");
-	}
+}
 
-	for(var i = 60; i < 70; i++){
-		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset()");
+
+// 选择轮船起点
+function setShipOutset(shipId,step){
+	ws.send('{"type":"setOutset","shipId":"'+ shipId +'","step":"'+ step +'"}');
+}
+// 确认轮船起点
+function confirmShipOutset(){
+	ws.send('{"type":"confirmOutset"}');
+}
+
+// 移动轮船 (按格子)
+function shipMove(shipId,step){
+	step = parseInt(step);
+	if(step > 13){
+		if(portShips == 0){
+			step = 16;
+		}else if(portShips == 1){
+			step = 18;
+		}else if(portShips == 2){
+			step = 20;
+		}
+		var n = step * 60;
+		var p = n + 'px';
+		$("#ship"+shipId).animate({left:p},'slow');
+		shipMoveIntoPort(shipId); //进港
+	}else{
+		var n = step * 60;
+		var p = n + 'px';
+		$("#ship"+shipId).animate({left:p},'slow');
 	}
+	shipStep[shipId] = step;
+}
+
+// 移动轮船 (按点数)
+function shipMovePoint(shipId,point){
+	var nowStep = parseInt(shipStep[shipId]);
+	if(nowStep > 13){ // 已经进港
+		return;
+	}
+	step = parseInt(point) + nowStep;
+	shipMove(shipId,step);
+}
+
+// 轮船进港
+function shipMoveIntoPort(shipId){
+	$('#ship'+shipId).animate(
+		{borderSpacing:-90},
+		{step: 
+			function(now,fx) {
+	     		$(this).css('-webkit-transform','rotate('+now+'deg)');      
+				$(this).css('-moz-transform','rotate('+now+'deg)');      
+				$(this).css('-ms-transform','rotate('+now+'deg)');
+	    		$(this).css('-o-transform','rotate('+now+'deg)');      
+				$(this).css('transform','rotate('+now+'deg)');
+			},
+   			duration:'slow' 
+		},
+		'linear');
+
+	if(shipId == 2){
+		var move = '-120px';
+	}else if(shipId == 3){
+		var move = '-240px';
+	}
+	$("#ship"+shipId).animate({top:move});
+	portShips = portShips + 1;
+}
+
+// 轮船进修理厂
+function shipMoveIntoRepair(shipId){
+
+	$('#ship'+shipId).animate(
+		{borderSpacing:90},
+		{step: 
+			function(now,fx) {
+	     		$(this).css('-webkit-transform','rotate('+now+'deg)');      
+				$(this).css('-moz-transform','rotate('+now+'deg)');      
+				$(this).css('-ms-transform','rotate('+now+'deg)');
+	    		$(this).css('-o-transform','rotate('+now+'deg)');      
+				$(this).css('transform','rotate('+now+'deg)');
+			},
+   			duration:'slow' 
+		},
+		'linear');
+
+	if(shipId == 1){
+		var move = '240px';
+	}else if(shipId == 2){
+		var move = '120px';
+	}
+	$("#ship"+shipId).animate({top:move});
+	repairShips = repairShips + 1;
 }
 
 // 更新玩家金币
@@ -280,7 +407,6 @@ function start(){
 }
 
 function test(){
-
 	//document.querySelectorAll('#list > div')[20].onclick = click();
 	document.querySelectorAll('#list > div')[20].setAttribute("onclick","tt()");
 }

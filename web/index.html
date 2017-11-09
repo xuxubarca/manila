@@ -102,7 +102,7 @@
 				var point = $(".point");
 				point.click(function(){
 				
-					ws.send('{"type":"manilaPoint","num":"3"}');
+					ws.send('{"type":"playPoint","num":"3"}');
 					
 				});
 			});
@@ -153,6 +153,12 @@
 			var uid;
 			var captain = 0;
 			var my_turn;
+			var shipStep=new Array();
+			shipStep[1]= 0;
+			shipStep[2]= 0;
+			shipStep[3]= 0;
+			var portShips = 0;
+			var repairShips = 0;
 			var manila = {
 				// 父容器
 				box: null,//document.getElementById('box'),
@@ -169,7 +175,6 @@
 				init: function() {
 					this.webSocket();
 					this.createBox();
-
 				},
 				 // 连接服务端
 				webSocket: function() {
@@ -220,19 +225,19 @@
 							str += '<div class="div1" style="left:' + j*120 + 'px;top:' + i*60 + 'px"></div>';
 						}
 					}
-					// str += '<div class="ship1">';
+					// str += '<div class="ship" id="ship1">';
 					// for (var j = 0; j < 4; j++) {
-					// 	str += '<div class="ship" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					// 	str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
 					// }
 					// str += '</div>';
-					// str += '<div class="ship2">';
+					// str += '<div class="ship" id="ship2">';
 					// for (var j = 0; j < 4; j++) {
-					// 	str += '<div class="ship" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					// 	str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
 					// }
 					// str += '</div>';
-					// str += '<div class="ship3" >';
+					// str += '<div class="ship" id="ship3">';
 					// for (var j = 0; j < 4; j++) {
-					// 	str += '<div class="ship" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					// 	str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
 					// }
 					// str += '</div>';
 					this.box.innerHTML = str;
@@ -300,7 +305,7 @@
 			function onopen()
 			{
 				// 登录
-				var login_data = '{"type":"manilaLogin","room_id":"2","uid":"'+ uid +'"}';
+				var login_data = '{"type":"login","room_id":"2","uid":"'+ uid +'"}';
 				//var login_data = '{"type":"logintest","room_id":2}';
 				console.log("websocket握手成功，发送登录数据:"+login_data);
 				ws.send(login_data);
@@ -318,7 +323,7 @@
 						ws.send('{"type":"pong"}');
 						break;
 					//登录
-					case 'manilaLogin':
+					case 'login':
 						console.log(data['client_name']+"登录成功");
 						if(data['my_id']){
 							my_turn = data['my_turn'];
@@ -330,10 +335,6 @@
 						var client_list = data['clients_list'];
 						getPlayerList(client_list);
 						
-						break;
-					//掷骰子
-					case 'manilaPoint':
-						playPoint(data['point']);
 						break;
 					//叫地主
 					case 'callCaptain':
@@ -380,7 +381,29 @@
 					case 'chooseGoods':
 						choosed(data['goods_info']);
 						if(data['finish']){ // 货物选择结束
-							
+							if(captain == 1){
+								initShipOutset();
+							}
+						}
+						break;
+					// 设置轮船起点
+					case 'setOutset':
+						shipMove(data['ship_id'],data['step']);
+						break;
+					// 确认轮船起点
+					case 'confirmOutset':
+						for(var i=1;i<=3;i++){
+							shipMove(i,data['ship_step'][i]);
+						}
+						if(caption == 1){
+							endShipOutset();
+						}
+						break;
+					// 掷骰子
+					case 'playPoint':
+						playPoint(data['point']);
+						for(var i=1;i<=3;i++){
+							shipMovePoint(i,data['point'][i]);
 						}
 						break;
 					// 用户退出 更新用户列表
@@ -395,9 +418,7 @@
 			/*
 			$(document).ready(function(){
 			  $("button").click(function(){
-				$(".ship1").animate({left:'500px'});
-				
-				
+		
 				$('.ship1').animate({  borderSpacing: -90 }, {    step: function(now,fx) {
      				$(this).css('-webkit-transform','rotate('+now+'deg)');      
 					$(this).css('-moz-transform','rotate('+now+'deg)');      
@@ -425,7 +446,15 @@
 		
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
-		<input type="button" onclick="tt()" value="start2"> 
+		<!--
+		<input type="button" onclick="shipMove(1,16)" value="start1"> 
+		<input type="button" onclick="shipMove(2,18)" value="start2"> 
+		<input type="button" onclick="shipMove(3,20)" value="start3"> 
+		<input type="button" onclick="shipMove(3,5)" value="start3"> 
+		<input type="button" onclick="shipMoveInto(1)" value="r1"> 
+		<input type="button" onclick="shipMoveInto(2)" value="r2"> 
+		<input type="button" onclick="shipMoveInto(3)" value="r3"> 
+	-->
 		<!--<div class="next"></div>-->
 	</body>
 </html>

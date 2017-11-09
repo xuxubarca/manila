@@ -24,7 +24,7 @@
  * 主要是处理 onMessage onClose 
  */
 use \GatewayWorker\Lib\Gateway;
-use \GatewayWorker\Lib\Db;
+//use \GatewayWorker\Lib\Db;
 
 class Events
 {
@@ -60,108 +60,59 @@ class Events
         $message_data = json_decode($message, true);
         if(!$message_data)
         {
-            return ;
+            return;
         }
+        /*
+            马尼拉 rd结构
+
+            房间信息:  m_room_{$room_id} Hash
+
+            uid =>  array(
+                'gold'=>30,
+                'name'=>$uid,
+                'stock'=>array(0=>1, 1=>3,),  //1~4 四种股票
+                'worker'=>3, 工人数量
+                'client_id'=>$client_id,
+                'uid'=>$uid,
+            ) 
+            
+            uid=>client_id : m_room_{$room_id}_player Hash
+           
+            房间状态： m_room_status_{$room_id} Strng
+
+            array(
+                'status'=>0, // 0 准备中  1 已开始
+                'round'=>1 //回合数
+                'turn'=>array($uid,$uid),//玩家顺序
+                'now'=>0,//0~5 //当前回合玩家
+                'step'=>0, 1 叫地主 2 选货物 3 设置起点 
+                'price_info'=>array('uid'=>$uid,'num'=>$price),
+                'give_up'=>array($uid=>0,$uid=>0),
+                'captain'=>$uid,
+                'goods'=>array(1=>2,2=>3,3=>1),// 1~4种货物 位置-1=>颜色
+                'ship'=>array(1=>0,2=>0,3=>0),// 轮船起始位置
+            )
+
+            轮船：  m_ship_{$room_id} Hash
+
+            shipId =>array(
+                'id'=>$shipId,
+                'color'=>$colorId,
+                'step'=>0, //0~13
+                'cell'=>array(1=>$uid,2=>$uid...),
+                'status'=>0,
+            )
+        */
+
         // 根据类型执行不同的业务
         switch($message_data['type'])
         {
-            //心跳
+            // 心跳
             case 'pong':
                 return;
-            //登录
+
+            // 登录
             case 'login':
-                // 判断是否有房间号
-                if(!isset($message_data['room_id']))
-                {
-                    throw new \Exception("\$message_data['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']} \$message:$message");
-                }
-                
-                
-                $room_id = $message_data['room_id'];
-                $client_name = htmlspecialchars($message_data['client_name']);
-                $_SESSION['room_id'] = $room_id;
-                $_SESSION['client_name'] = $client_name;
-              
-                // 获取房间内所有用户列表 
-                $clients_list = Gateway::getClientSessionsByGroup($room_id);
-                foreach($clients_list as $tmp_client_id=>$item)
-                {
-                    $clients_list[$tmp_client_id] = $item['client_name'];
-                }
-                $clients_list[$client_id] = $client_name;
-                
-                $new_message = array(
-                    'type'=>$message_data['type'], 
-                    'client_id'=>$client_id, 
-                    'client_name'=>htmlspecialchars($client_name), 
-                    'time'=>date('Y-m-d H:i:s'),
-                );
-                $db = Db::instance('user');
-                //$name = $db->select('name')->from('test')->where('id= 2')->single();
-                $row = $db->select('*')->from('play')->where("id ='".$client_id."'")->query();
-                if(count($row)==0){
-                    $db->insert('play')->cols(array('id'=>$client_id, 'name'=>$client_name))->query();
-                }
-                $num_list = array();
-                foreach($clients_list as $k=>$v){
-                    $num = 1;
-                    $checkNum = $db->select('num')->from('play')->where("id ='".$k."'")->single();
-                    if($checkNum>0){
-                         $num = $checkNum;
-                    }
-                    $num_list[$k] = $num;
-                }
-                $new_message['num_list'] = $num_list;
-
-                Gateway::sendToGroup($room_id, json_encode($new_message));
-                Gateway::joinGroup($client_id, $room_id);
-
-
-                //$autoid = $db->select('autoid')->from('play')->where("id ='".$client_id."'")->single();
-                //$new_message['autoid'] = $autoid;
-                // 给当前用户发送用户列表 
-                $new_message['client_list'] = $clients_list;
-                
-                Gateway::sendToCurrentClient(json_encode($new_message));
-                return;
-
-            /*
-                马尼拉 rd结构
-
-                房间信息:  m_room_{$room_id} Hash
-
-                uid =>  array(
-                    'gold'=>30,
-                    'name'=>$uid,
-                    'stock'=>array(0=>1, 1=>3,),  //1~4 四种股票
-                    'worker'=>3, 工人数量
-                    'client_id'=>$client_id,
-                    'uid'=>$uid,
-                ) 
-                
-                uid=>client_id : m_room_{$room_id}_player Hash
-               
-                房间状态： m_room_status_{$room_id} Strng
-
-                array(
-                    'status'=>0, // 0 准备中  1 已开始
-                    'round'=>1 //回合数
-                    'turn'=>array($uid,$uid),//玩家顺序
-                    'now'=>0,//0~5 //当前回合玩家
-                    'step'=>0, 1 叫地主 2 选货物 
-                    'price_info'=>array('uid'=>$uid,'num'=>$price),
-                    'give_up'=>array($uid=>0,$uid=>0),
-                    'captain'=>$uid,
-                    'goods'=>array(1=>0,2=>0,3=>0),// 1~4种货物
-                )
-
-
-
-         
-            */
-
-            // 马尼拉 登录
-            case 'manilaLogin':
                 // 判断是否有房间号
                 if(!isset($message_data['room_id']))
                 {
@@ -182,7 +133,7 @@ class Events
                 $room_status = unserialize(self::$rd->get($room_status_key));
                 $player_key = "m_room_{$room_id}_player"; // uid和client_id对应表
                 self::$rd -> hset($player_key,$uid,$client_id);
-                if(isset($playerList[$uid])){ //玩家重新登录
+                if(isset($playerList[$uid])){ // TODO 玩家重新登录 地图信息同步
 
                     
 
@@ -197,7 +148,7 @@ class Events
                     
                 }
 
-                if($goToNewRoom){ //去新房间
+                if($goToNewRoom){ //TODO 去新房间
 
                      $new_message = array(
                         'type'=>'newRoom',
@@ -259,7 +210,7 @@ class Events
                 $new_message['my_turn'] = $my_turn;
                 Gateway::sendToCurrentClient(json_encode($new_message));
                 return;
-            //拉取当前场上数据
+            // 拉取当前场上数据  TODO 地图信息尚未加入
             case 'map':
 
                 if(!isset($_SESSION['room_id']))
@@ -315,35 +266,6 @@ class Events
                 Gateway::sendToGroup($room_id, json_encode($new_message));
                 Gateway::sendToCurrentClient(json_encode($new_message));
                 return;
-            // 马尼拉 掷骰子
-            case 'manilaPoint':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
-                }
-                $room_id = $_SESSION['room_id'];
-                $client_name = $_SESSION['client_name'];
-
-                $num = $message_data['num'];
-                if($num >0){
-                    $pointArr = array();
-                    for($i=1;$i<=$num;$i++){
-                        $rand = mt_rand(1,6);
-                        $pointArr[$i] = $rand;
-                    }
-
-                }else{
-                    return;
-                }
-                
-                $new_message = array(
-                        'type'=>'manilaPoint',
-                        'from_client_id'=>$client_id,
-                        'from_client_name' =>$client_name,
-                        'to_client_id'=>'all',
-                        'point'=>$pointArr, 
-                );
-                return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
             //开始
             case 'start':
@@ -623,11 +545,11 @@ class Events
                 if(count($goodsArr) >=3){
                     return;
                 }
-                if(isset($goodsArr[$goodsId])){
+                if(array_key_exists($goodsId,$goodsArr)){
                     return;
                 }
 
-                $room_status['goods'][$goodsId] = 0;
+                $room_status['goods'][] = $goodsId;
 
                 self::$rd->set($room_status_key,serialize($room_status));
 
@@ -647,6 +569,154 @@ class Events
 
                 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
+            // 设置轮船起点
+            case 'setOutset':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                
+                if(isset($message_data['step'])){
+                    $step = $message_data['step'];
+                }else{
+                    return;
+                }
+                if(isset($message_data['shipId'])&&$message_data['shipId']<=3){
+                    $shipId = $message_data['shipId'];
+                }else{
+                    return;
+                }
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+                $captain = $room_status['captain'];
+                $uid = self::getUid($room_id,$client_id);
+                if($captain != $uid){
+                    return;
+                }
+
+                if($step>5){ // 最多设置第五格
+                    return;
+                }
+                $room_status['ship'][$shipId] = $step;
+                self::$rd->set($room_status_key,serialize($room_status));
+                $new_message = array(
+                    'type'=>'setOutset', 
+                    'from_client_id'=>$client_id,
+                    'from_client_name' =>$client_name,
+                    'to_client_id'=>'all',
+                    'ship_id'=>$shipId,
+                    'step'=>$step,
+                ); 
+
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+
+            /*
+                shipId =>array(
+                    'id'=>$shipId,
+                    'color'=>$colorId,
+                    'step'=>0, //0~13
+                    'cell'=>array(1=>$uid,2=>$uid...),
+                    'status'=>0,
+                )
+
+            */
+
+            // 确认轮船起点
+            case 'confirmOutset':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+                
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+                $captain = $room_status['captain'];
+
+                $uid = self::getUid($room_id,$client_id);
+                if($captain != $uid){
+                    return;
+                }
+
+                $ship_step = $room_status['ship'];
+                $total = 0;
+                foreach ($ship_step as $k => $v) {
+                    if($v > 5){
+                        return;
+                    }
+                    $total += $v;
+                }
+                if($total != 9){
+                    return;
+                }
+
+                // 初始化轮船信息
+                $ship_key = "m_ship_{$room_id}"; //轮船
+                self::$rd->delete($ship_key); 
+                $goodsArr = $room_status['goods'];
+                //$goodsConf = self::gameConf['goods'];
+                for($i=1;$i<=3;$i++){
+                    if(isset($ship_step[$i])){
+                        $step = $ship_step[$i];
+                    }else{
+                        $step = 0;
+                    }
+                    $goodsId = $goodsArr[$i-1];
+                    $shipInfo = array(
+                        'id' => $i,
+                        'goods_id'=>$goodsId,
+                        'step' => $step, 
+                        'status'=>0,
+                        'cells'=>array(),
+                    );
+                    self::$rd->hset($ship_key,$i,serialize($shipInfo));
+                }
+
+                $new_message = array(
+                    'type'=>'setOutset', 
+                    'from_client_id'=>$client_id,
+                    'from_client_name' =>$client_name,
+                    'to_client_id'=>'all',
+                    'ship_step'=>$ship_step,
+                ); 
+
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+
+            // 掷骰子
+            case 'playPoint':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                $num = $message_data['num'];
+                if($num >0){
+                    $pointArr = array();
+                    for($i=1;$i<=$num;$i++){
+                        $rand = mt_rand(1,6);
+                        $pointArr[$i] = $rand;
+                    }
+
+                }else{
+                    return;
+                }
+                
+                $new_message = array(
+                    'type'=>'playPoint',
+                    'from_client_id'=>$client_id,
+                    'from_client_name' =>$client_name,
+                    'to_client_id'=>'all',
+                    'point'=>$pointArr, 
+                );
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+
             //发言
             case 'say':
 
@@ -693,8 +763,6 @@ class Events
    {
        // debug
        echo "client:{$_SERVER['REMOTE_ADDR']}:{$_SERVER['REMOTE_PORT']} gateway:{$_SERVER['GATEWAY_ADDR']}:{$_SERVER['GATEWAY_PORT']}  client_id:$client_id onClose:''\n";
-       $db = Db::instance('user');
-       $db->delete('play')->where("id ='".$client_id."'")->query();
        // 从房间的客户端列表中删除
        if(isset($_SESSION['room_id']))
        {
