@@ -176,7 +176,9 @@ function getPlayerList(client_list){
 		var turn = client_list[u]['turn'];
 		$("#user"+turn).css('display','block');
 		$('#username'+turn).html('<h2>'+ u +'</h2>');
-		$('#userpanel'+turn).html('<h2>'+ client_list[u]['gold'] +'</h2>');					
+		$('#userpanel'+turn).html('<h2>'+ client_list[u]['gold'] +'</h2>');	
+		$('#username'+turn).css({'background-color' : client_list[u]['color']});	
+		$('#userpanel'+turn).css({'background-color' : client_list[u]['color']});			
 	}
 	
 }
@@ -227,6 +229,7 @@ function initShip(goodsInfo){
 	}
 	num = num + 1;
 	var shipId = 'ship' + num;
+	var pointId = 'p' + num;
 	var str = '';
 	str += '<div class="ship" id="'+ shipId +'">';
 	//console.log(goodsInfo['cells']);
@@ -254,8 +257,10 @@ function initShip(goodsInfo){
 		}
 	}
 	str += '</div>';
+
 	$('#box').append(str);
 	$('#'+shipId).css("background-color",goodsInfo['color']);
+	$('#'+pointId).css("background-color",goodsInfo['color']);
 }
 // 初始化轮船起点设置
 function initShipOutset(){
@@ -277,6 +282,7 @@ function initShipOutset(){
 		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
 		j++;
 	}
+	$('.confirm').css('display','block');
 }
 // 结束轮船起点设置
 function endShipOutset(){
@@ -408,7 +414,8 @@ function start(){
 
 function test(){
 	//document.querySelectorAll('#list > div')[20].onclick = click();
-	document.querySelectorAll('#list > div')[20].setAttribute("onclick","tt()");
+	//document.querySelectorAll('#list > div')[20].setAttribute("onclick","tt()");
+	ws.send('{"type":"test"}');
 }
 function tt(){
 	//alert('!!!!!!!!!');

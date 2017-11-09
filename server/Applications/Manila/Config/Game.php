@@ -32,6 +32,8 @@ return array(
 			//'name'=>'肉豆蔻',
 		),
 	),
+	// 玩家颜色
+	'color'=>array('#00FFFF','#93FF93','#FF0080','#4F9D9D','#C2FF68','#8600FF'),
 	
 
 

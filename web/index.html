@@ -225,6 +225,7 @@
 							str += '<div class="div1" style="left:' + j*120 + 'px;top:' + i*60 + 'px"></div>';
 						}
 					}
+					str += 	'<div class="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
 					// str += '<div class="ship" id="ship1">';
 					// for (var j = 0; j < 4; j++) {
 					// 	str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
@@ -392,12 +393,18 @@
 						break;
 					// 确认轮船起点
 					case 'confirmOutset':
-						for(var i=1;i<=3;i++){
-							shipMove(i,data['ship_step'][i]);
+
+						if(data['message'] == 'not_nine'){
+							alert('轮船起点数相加不等于9！！');
+						}else{
+							for(var i=1;i<=3;i++){
+								shipMove(i,data['ship_step'][i]);
+							}
+							if(caption == 1){
+								endShipOutset();
+							}
 						}
-						if(caption == 1){
-							endShipOutset();
-						}
+
 						break;
 					// 掷骰子
 					case 'playPoint':
@@ -414,47 +421,20 @@
 				}
 			}
 			
-			
-			/*
-			$(document).ready(function(){
-			  $("button").click(function(){
-		
-				$('.ship1').animate({  borderSpacing: -90 }, {    step: function(now,fx) {
-     				$(this).css('-webkit-transform','rotate('+now+'deg)');      
-					$(this).css('-moz-transform','rotate('+now+'deg)');      
-					$(this).css('-ms-transform','rotate('+now+'deg)');
-    				$(this).css('-o-transform','rotate('+now+'deg)');      
-					$(this).css('transform','rotate('+now+'deg)');      },
-   				duration:'slow' },'linear');
-				
-				$(".ship1").animate({top:'-100px'});
-				
-			  });
-			});
-			*/
-
 		</script>
 
 	    <div class="point">
 			<div id="dice1" class="dice1 dice_1"></div>
 			<div id="dice2" class="dice2 dice_1"></div>
 			<div id="dice3" class="dice3 dice_1"></div>					   		
-			<div class="pcolor" ></div>
-			<div class="pcolor" ></div>
-			<div class="pcolor" ></div>
+			<div class="pcolor" id="p1"></div>
+			<div class="pcolor" id="p2"></div>
+			<div class="pcolor" id="p3"></div>
 		</div>
 		
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
-		<!--
-		<input type="button" onclick="shipMove(1,16)" value="start1"> 
-		<input type="button" onclick="shipMove(2,18)" value="start2"> 
-		<input type="button" onclick="shipMove(3,20)" value="start3"> 
-		<input type="button" onclick="shipMove(3,5)" value="start3"> 
-		<input type="button" onclick="shipMoveInto(1)" value="r1"> 
-		<input type="button" onclick="shipMoveInto(2)" value="r2"> 
-		<input type="button" onclick="shipMoveInto(3)" value="r3"> 
-	-->
-		<!--<div class="next"></div>-->
+		<input type="button" onclick="test()" value="start1"> 
+
 	</body>
 </html>
