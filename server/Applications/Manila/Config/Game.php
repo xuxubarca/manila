@@ -34,6 +34,8 @@ return array(
 	),
 	// 玩家颜色
 	'color'=>array('#00FFFF','#93FF93','#FF0080','#4F9D9D','#C2FF68','#8600FF'),
+	// 股票价格
+	'stock_list'=>array(0=>0,1=>5,2=>10,3=>20,4=>30),
 	
 
 

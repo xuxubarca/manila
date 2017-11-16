@@ -298,6 +298,19 @@
 					this.box.innerHTML = str;
 					document.body.appendChild(this.box);
 
+					var str = '';
+					/* 主面板 */
+					this.box = document.createElement('div');
+					this.box.id = 'buystock';
+					for (var j = 0; j < 5; j++) {
+						str += '<div class="buyCell" onclick="buystock('+ j +')" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
+					}
+					this.box.innerHTML = str;
+					document.body.appendChild(this.box);
+					document.querySelectorAll('#buystock > div')[1].style.background = 'blue';
+					document.querySelectorAll('#buystock > div')[2].style.background = 'yellow';
+					document.querySelectorAll('#buystock > div')[3].style.background = 'green';
+					document.querySelectorAll('#buystock > div')[4].style.background = 'red';
 				},
 
 			}
@@ -337,6 +350,10 @@
 						getPlayerList(client_list);
 						
 						break;
+					// 股票信息
+					case 'stockMsg':
+						myStock(data['myStock']);
+						break;
 					//叫地主
 					case 'callCaptain':
 						var now_price = 0;
@@ -356,11 +373,13 @@
 								$("#price").css('display','none');
 								$("#user"+data['captain']['turn']).css('box-shadow', '0px 0px 5px 5px rgba(205, 241, 9, 0.6)');
 								nowTurn(data['captain']['turn']);
+
 								if(data['captain']['uid'] == uid){
+									startBuyStock();
 									captain = 1;
-									startChooseGoods(1);
+									//startChooseGoods(1);
 								}else{
-									startChooseGoods(0);
+									//startChooseGoods(0);
 								}
 								
 							}else{
@@ -377,6 +396,24 @@
 						break;
 					case 'moneyRefresh':
 						moneyRefresh(data['turn'],data['gold']);
+						break;
+					// 买股票
+					case 'buystock':
+						if(data['give_up']){
+							alert('队长放弃购买股票');
+						}else{
+							if(captain == 1){
+								myStock(data['my_stock']);
+							}
+						}
+
+						if(captain == 1){
+							endBuyStock();
+							startChooseGoods(1);
+						}else{
+							startChooseGoods(0);
+						}
+
 						break;
 					// 选货物
 					case 'chooseGoods':
@@ -400,7 +437,7 @@
 							for(var i=1;i<=3;i++){
 								shipMove(i,data['ship_step'][i]);
 							}
-							if(caption == 1){
+							if(captain == 1){
 								endShipOutset();
 							}
 						}

@@ -86,12 +86,13 @@ class Events
                 'round'=>1 //回合数
                 'turn'=>array($uid,$uid),//玩家顺序
                 'now'=>0,//0~5 //当前回合玩家
-                'step'=>0, 1 叫地主 2 选货物 3 设置起点 
+                'step'=>0, 1 叫地主 2 买股票 3 选货物 
                 'price_info'=>array('uid'=>$uid,'num'=>$price),
                 'give_up'=>array($uid=>0,$uid=>0),
                 'captain'=>$uid,
                 'goods'=>array(1=>2,2=>3,3=>1),// 1~4种货物 位置-1=>颜色
                 'ship'=>array(1=>0,2=>0,3=>0),// 轮船起始位置
+                'stock_list'=>array(1=>0,2=>1,3=>1,4=>3), 
             )
 
             轮船：  m_ship_{$room_id} Hash
@@ -290,23 +291,36 @@ class Events
 
                     self::$rd->set($room_status_key,serialize($room_status));
                 }
+                $clients_list = Gateway::getClientSessionsByGroup($room_id);
+                //$playerNum = count($room_status['turn']);
+                $stockArr = self::dealStock($room_id);
+
+                foreach($room_status['turn'] as $k=>$uuid){
+                    $sInfo = $stockArr['playerStock'][$k];
+                    $c_id = self::getClientId($room_id,$uuid);
+                    self::sendStockMsg($c_id,$sInfo);
+                }
+                // foreach($clients_list as $k=>$v){
+                //     self::sendStockMsg($k,);
+                // }
                 
+
                 $nextInfo = array(
                     'next'=>0,
                     //'next_uid'=>$uid,
                 );
 
                 $new_message = array(
-                        'type'=>'callCaptain',
-                        'from_client_id'=>$client_id,
-                        'to_client_id'=>'all',
-                        'turn'=>0,
-                        'now_price'=>0,
-                        'next_info'=>$nextInfo,
-                        'price'=>0,
+                    'type'=>'callCaptain',
+                    'turn'=>0,
+                    'now_price'=>0,
+                    'next_info'=>$nextInfo,
+                    'price'=>0,
                 );
 
                 Gateway::sendToGroup($room_id ,json_encode($new_message));
+
+
                 return;
             // 叫地主报价
             case 'price':
@@ -341,7 +355,7 @@ class Events
                         'type'=>'callCaptain',
                         'message'=>'money_not_enough',
                         'from_client_id'=>$client_id,
-                        'to_client_id'=>'all',
+                        'to_client_id'=>$client_id,
                         'price'=>$now_price,
                     );
                     Gateway::sendToCurrentClient(json_encode($new_message));
@@ -359,7 +373,7 @@ class Events
                             'type'=>'callCaptain',
                             'message'=>'no_money',
                             'from_client_id'=>$client_id,
-                            'to_client_id'=>'all',
+                            'to_client_id'=>$client_id,
                             'price'=>$now_price,
                         );
                         Gateway::sendToCurrentClient(json_encode($new_message));
@@ -470,10 +484,7 @@ class Events
 
                 $new_message = array(
                     'type'=>'callCaptain',
-                    'from_client_id'=>$client_id,
-                    'to_client_id'=>'all',
                     'give_up'=>1,
-                    
                 );
 
                 if(count($turn) - count($room_status['give_up']) == 1){ //产生队长
@@ -510,6 +521,92 @@ class Events
 
                
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
+            // 队长购买股票
+            case 'buystock':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+                $captain = $room_status['captain'];
+                $uid = self::getUid($room_id,$client_id);
+                if($captain != $uid){
+                    return;
+                }
+                if(!isset($message_data['stockId'])){
+                    return;
+                }
+
+                $step = 0;
+                if(isset($room_status['step'])){
+                    $step = $room_status['step'];
+                }
+                if($step != 2){
+                    return;
+                }
+
+                $stockId = $message_data['stockId'];
+                if($stockId == 0){ // 放弃购买
+                    $room_status['step'] = 3;
+                    self::$rd->set($room_status_key,serialize($room_status));
+
+                    $new_message = array(
+                        'type'=>'buystock',
+                        'give_up'=>1,
+                    );
+                    return Gateway::sendToGroup($room_id ,json_encode($new_message));
+                }else{
+
+                    $lastStock = $room_status['last_stock'];
+                    if($lastStock[$stockId] <= 0){ // 卖完
+                        return;
+                    }
+
+                    $price = self::getStockPrice($stockId,$room_status);
+                    if($price <= 0){
+                        $price = 5;
+                    }
+
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold < $price){
+                        $new_message = array(
+                            'type'=>'buystock',
+                            'message'=>'no_money',
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+                    $res = self::addMoney($uid,$room_id,$price,2);
+                    if($res){
+                        $room_key = "m_room_{$room_id}";//房间信息
+                        $userInfo = unserialize(self::$rd -> hget($room_key,$uid));
+                        $userInfo['stock'][] = intval($stockId);
+
+                        self::$rd -> hset($room_key,$uid,serialize($userInfo));
+
+                        $room_status['step'] = 3;
+                        $room_status['last_stock'][$stockId] -= 1;
+                        self::$rd->set($room_status_key,serialize($room_status));
+
+                        $new_message = array(
+                            'type'=>'buystock',
+                            'stockId'=>$stockId,
+                        );
+
+                        Gateway::sendToGroup($room_id ,json_encode($new_message));
+                        $new_message['my_stock'] = $userInfo['stock'];
+
+                        return Gateway::sendToCurrentClient(json_encode($new_message));
+                    }else{
+                        //todo 报错
+                    }
+                    
+                }
+
             // 选择货物
             case 'chooseGoods':
                 if(!isset($_SESSION['room_id']))
@@ -535,7 +632,7 @@ class Events
                 if(isset($room_status['step'])){
                     $step = $room_status['step'];
                 }
-                if($step != 2){
+                if($step != 3){
                     return;
                 }
 
@@ -661,7 +758,7 @@ class Events
                         'type'=>'confirmOutset',
                         'message'=>'not_nine',
                         'from_client_id'=>$client_id,
-                        'to_client_id'=>'all',
+                        'to_client_id'=>$client_id,
                     );
                     return Gateway::sendToCurrentClient(json_encode($new_message));
                 }
@@ -689,7 +786,7 @@ class Events
                 }
 
                 $new_message = array(
-                    'type'=>'setOutset', 
+                    'type'=>'confirmOutset', 
                     'from_client_id'=>$client_id,
                     'from_client_name' =>$client_name,
                     'to_client_id'=>'all',
@@ -847,6 +944,16 @@ class Events
      
 
    }
+   // 发送抽取的股票信息
+   public static function sendStockMsg($client_id,$myStock){
+        $new_message = array(
+            'type'=>'stockMsg',
+            'myStock'=>$myStock,
+        );
+        return Gateway::sendToClient($client_id,json_encode($new_message));
+
+   }
+
    /*
 
     房间信息:  m_room_{$room_id} Hash
@@ -903,8 +1010,6 @@ class Events
         $turn = array_search($uid,$room_status['turn']);
         $new_message = array(
             'type'=>'moneyRefresh',
-            'from_client_id'=>$client_id,
-            'to_client_id'=>'all',
             'uid'=>$uid,
             'gold'=>$gold,
             'turn'=>$turn,
@@ -912,8 +1017,11 @@ class Events
         return Gateway::sendToGroup($room_id ,json_encode($new_message));
    }
    // 发牌
-   public static function dealStock($playerNum){
+   public static function dealStock($room_id){
 
+        $room_status_key = "m_room_status_{$room_id}";//房间状态
+        $room_status = unserialize(self::$rd->get($room_status_key));
+        $playerNum = count($room_status['turn']);
         $stock = array();
         for($i=1;$i<=5;$i++){
             $stock[] = 1;
@@ -931,13 +1039,54 @@ class Events
             unset($stock[$random_keys[0]]);
             unset($stock[$random_keys[1]]);
         }
+        
+
+        $lastStock = array();
+        foreach($stock as $k=>$v){
+            if(!isset($lastStock[$v])){
+                $lastStock[$v] = 0;
+            }
+            $lastStock[$v] += 1;
+        }
+
+        $room_key = "m_room_{$room_id}";//房间信息
+        foreach($playerStock as $k=>$v){
+            $userStock = $v;
+            $userUid = $room_status['turn'][$k];
+            $userInfo = unserialize(self::$rd -> hget($room_key,$userUid));
+            $userInfo['stock'] = $userStock;
+            $userInfo = self::$rd -> hset($room_key,$userUid,serialize($userInfo));
+        }
+
+        $room_status['last_stock'] = $lastStock;
+        self::$rd -> set($room_status_key,serialize($room_status));
         $arr['playerStock'] = $playerStock;
-        $arr['stock'] = $stock;
+        $arr['lastStock'] = $lastStock;
         return $arr;
 
    }
-   //通过客户端ID 获取玩家UID
-   public static function getUid($room_id,$client_id){
+   // 购买股票
+   public static function buyStock(){
+
+   }
+   // 获取股票当前价格
+   public static function getStockPrice($stockId,$room_status=null){
+
+        $priceConf = self::$gameConf['stock_list'];
+        if($room_status){
+            
+            if(isset($room_status['stock_list'][$stockId])){
+                $stock_list = $room_status['stock_list'][$stockId];
+                $price = $priceConf[$stock_list];
+            }else{
+                $price = 0;
+            }
+        }
+
+        return $price;
+   }
+   // 通过客户端ID 获取玩家UID
+    public static function getUid($room_id,$client_id){
 
         $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
         $uid_to_clients = self::$rd -> hgetall($player_key);
@@ -947,6 +1096,18 @@ class Events
         }else{
             return false;
         }
-   }
+    }
+
+    // 通过UID 获取玩家客户端ID
+    public static function getClientId($room_id,$uid){
+
+        $player_key = "m_room_{$room_id}_player"; //uid client_id 对应表
+        $clients_id = self::$rd -> hget($player_key,$uid);
+        if($clients_id){
+            return $clients_id;
+        }else{
+            return false;
+        }
+    }
   
 }

@@ -88,7 +88,7 @@ function initLocation(){
 
 /* 初始化地图数据 */
 function initData(){
-
+	
 }
 
 //登录弹窗
@@ -167,7 +167,11 @@ function nowTurn(turn){
 
 	$('#user'+turn).css("background-color","#FF8C00");
 }
+// 买股票面板
+function initBuyStockViews(){
 
+
+}
 
 // 更新玩家列表
 function getPlayerList(client_list){
@@ -181,6 +185,14 @@ function getPlayerList(client_list){
 		$('#userpanel'+turn).css({'background-color' : client_list[u]['color']});			
 	}
 	
+}
+// 显示股票购买面板
+function startBuyStock(){
+	$('#buystock').css('display','block');
+}
+
+function endBuyStock(){
+	$('#buystock').css('display','none');
 }
 // 开始选货物
 function startChooseGoods(isCaptain){
@@ -204,10 +216,10 @@ function endChooseGoods(){
 	document.querySelectorAll('#list > div')[22].removeAttribute("onclick");
 	document.querySelectorAll('#list > div')[23].removeAttribute("onclick");
 
-	document.querySelectorAll('#list > div')[20].style.borderColor="0";
-	document.querySelectorAll('#list > div')[21].style.borderColor="0";
-	document.querySelectorAll('#list > div')[22].style.borderColor="0";
-	document.querySelectorAll('#list > div')[23].style.borderColor="0";
+	document.querySelectorAll('#list > div')[20].style.borderColor="#000000";
+	document.querySelectorAll('#list > div')[21].style.borderColor="#000000";
+	document.querySelectorAll('#list > div')[22].style.borderColor="#000000";
+	document.querySelectorAll('#list > div')[23].style.borderColor="#000000";
 }
 // 选择货物
 function chooseGoods(goods){
@@ -217,7 +229,8 @@ function chooseGoods(goods){
 function choosed(goodsInfo){
 	var n = parseInt(goodsInfo['id']) + 19;
 	document.querySelectorAll('#list > div')[n].removeAttribute("onclick");
-	document.querySelectorAll('#list > div')[n].innerHTML = '<h2> √ </h2>';
+	document.querySelectorAll('#list > div')[n].style.borderColor="#ADADAD";
+	//document.querySelectorAll('#list > div')[n].innerHTML = '<h2> √ </h2>';
 	// var color = document.querySelectorAll('#list > div')[n].style.backgroundColor;
 	initShip(goodsInfo);
 }
@@ -286,7 +299,6 @@ function initShipOutset(){
 }
 // 结束轮船起点设置
 function endShipOutset(){
-
 	j = 0;
 	for(var i = 20; i < 26; i++){
 		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
@@ -305,7 +317,7 @@ function endShipOutset(){
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
 		j++;
 	}
-
+	$('.confirm').css('display','none');
 }
 
 
@@ -408,6 +420,31 @@ function moneyRefresh(turn,num){
 	$('#userpanel'+turn).html(str);
 }
 
+// 更新玩家股票
+function myStock(myStock){
+	var stockArr = new Array();
+	for(var i in myStock){
+		if(stockArr[myStock[i]] > 0){
+			stockArr[myStock[i]] += 1;
+		}else{
+			stockArr[myStock[i]] = 1;
+		}
+	}
+
+	for(var i=1;i<=4;i++){
+		var n = 19 + i;
+		if(stockArr[i]>0){
+			document.querySelectorAll('#list > div')[n].innerHTML = '<p>'+ stockArr[i] +'</p>';
+		}else{
+			document.querySelectorAll('#list > div')[n].innerHTML = '<p>'+ 0 +'</p>';
+		}
+	}
+}
+// 队长买股票
+function buystock(stockId){
+	ws.send('{"type":"buystock","stockId":"'+ stockId +'"}');
+}
+// 开始游戏
 function start(){
 	ws.send('{"type":"start"}');
 }
