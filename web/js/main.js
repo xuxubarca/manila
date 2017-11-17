@@ -38,23 +38,26 @@ function initLocation(){
 	/* 领航员坐标：3 4 */
 	document.querySelectorAll('#box > div')[3].style.border="2px solid #9AFF02";
 	document.querySelectorAll('#box > div')[4].style.border="2px solid #9AFF02";
-	document.querySelectorAll('#box > div')[3].innerHTML = '<p> 大领航员（-5） </p>';
-	document.querySelectorAll('#box > div')[4].innerHTML = '<p> 小领航员（-2） </p>';
+	document.querySelectorAll('#box > div')[3].innerHTML = '<p> 小领航员（-2） </p>';
+	document.querySelectorAll('#box > div')[4].innerHTML = '<p> 大领航员（-5） </p>';
 	/* 保险公司坐标：92 */
 	document.querySelectorAll('#box > div')[92].style.border="2px solid #FFDC35";
 	document.querySelectorAll('#box > div')[92].innerHTML = '<p> 保险（+10） </p>';
 	
-	document.querySelectorAll('#box > div')[3].innerHTML = '<p> 6 </p>';
-	document.querySelectorAll('#box > div')[4].innerHTML = '<p> 8</p>';
+
+	//document.querySelectorAll('#box > div')[3].innerHTML = '<p> 6 </p>';
+	//document.querySelectorAll('#box > div')[4].innerHTML = '<p> 8</p>';
 	
 	document.querySelectorAll('#box > div')[7].innerHTML = '<p> 6 </p>';
 	document.querySelectorAll('#box > div')[8].innerHTML = '<p> 8</p>';
 	document.querySelectorAll('#box > div')[9].innerHTML = '<p> 15 </p>';
-	
+
+	/* 港口 */
 	document.querySelectorAll('#box > div')[17].innerHTML = '<p> A (-4) </p>';
 	document.querySelectorAll('#box > div')[18].innerHTML = '<p> B (-3)</p>';
 	document.querySelectorAll('#box > div')[19].innerHTML = '<p> C (-2) </p>';
 	
+	/* 修理厂 */
 	document.querySelectorAll('#box > div')[89].innerHTML = '<p> A (-4) </p>';
 	document.querySelectorAll('#box > div')[88].innerHTML = '<p> B (-3)</p>';
 	document.querySelectorAll('#box > div')[87].innerHTML = '<p> C (-2) </p>';
@@ -440,10 +443,61 @@ function myStock(myStock){
 		}
 	}
 }
+// 初始化游戏
+function initGame(){
+	/* 登船 */
+	document.getElementById('ship1').setAttribute("onclick","boarding(1)");
+	document.getElementById('ship2').setAttribute("onclick","boarding(2)");
+	document.getElementById('ship3').setAttribute("onclick","boarding(3)");
+
+	/* 保险 */
+	document.querySelectorAll('#box > div')[92].setAttribute("onclick","insurance()");
+
+	/* 港口 */
+	document.querySelectorAll('#box > div')[17].setAttribute("onclick","port(1)");
+	document.querySelectorAll('#box > div')[18].setAttribute("onclick","port(2)");
+	document.querySelectorAll('#box > div')[19].setAttribute("onclick","port(3)");
+	
+	/* 修理厂 */
+	document.querySelectorAll('#box > div')[89].setAttribute("onclick","port(4)");
+	document.querySelectorAll('#box > div')[88].setAttribute("onclick","port(5)");
+	document.querySelectorAll('#box > div')[87].setAttribute("onclick","port(6)");
+
+	/* 海盗 */
+	document.querySelectorAll('#box > div')[6].setAttribute("onclick","pirate()");
+	document.querySelectorAll('#box > div')[16].setAttribute("onclick","pirate()");
+
+	/* 领航员 */
+	document.querySelectorAll('#box > div')[3].setAttribute("onclick","pilot(1)");
+	document.querySelectorAll('#box > div')[4].setAttribute("onclick","pilot(2)");
+
+}
+
+// 工人上船
+function boarding(shipId){
+	ws.send('{"type":"setWorker","action":"boarding","shipId":"'+ shipId +'"}');
+}
+
+// 押港口或修理厂
+function port(portId){
+	ws.send('{"type":"setWorker","action":"port","portId":"'+ portId +'"}');
+}
+
+// 领航员
+function pilot(pilotId){
+	ws.send('{"type":"setWorker","action":"pilot","pilotId":"'+ pilotId +'"}');
+}
+
+// 当海盗
+function pirate(pirateId){
+	ws.send('{"type":"setWorker","action":"pirate"}');
+}
+
 // 队长买股票
 function buystock(stockId){
 	ws.send('{"type":"buystock","stockId":"'+ stockId +'"}');
 }
+
 // 开始游戏
 function start(){
 	ws.send('{"type":"start"}');
@@ -455,9 +509,9 @@ function test(){
 	ws.send('{"type":"test"}');
 }
 function tt(){
-	//alert('!!!!!!!!!');
+	alert('!!!!!!!!!');
 	//document.querySelectorAll('#list > div')[20].removeAttribute("onclick");
 	//var num = $(".ship").length;
-	var color = document.querySelectorAll('#list > div')[20].style.backgroundColor;
-	alert(color);
+	//var color = document.querySelectorAll('#list > div')[20].style.backgroundColor;
+	//alert(color);
 }

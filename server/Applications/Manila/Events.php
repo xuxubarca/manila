@@ -87,6 +87,7 @@ class Events
                 'turn'=>array($uid,$uid),//玩家顺序
                 'now'=>0,//0~5 //当前回合玩家
                 'step'=>0, 1 叫地主 2 买股票 3 选货物 
+                'play'=>1, // 1 掷骰子
                 'price_info'=>array('uid'=>$uid,'num'=>$price),
                 'give_up'=>array($uid=>0,$uid=>0),
                 'captain'=>$uid,
@@ -104,6 +105,14 @@ class Events
                 'cell'=>array(1=>$uid,2=>$uid...),
                 'status'=>0,
             )
+
+            港口&修理厂:  m_port_{$room_id} 
+            array(
+                portId=>$uid,
+            )
+
+
+
         */
 
         // 根据类型执行不同的业务
@@ -253,7 +262,7 @@ class Events
                 foreach($turn as $k=>$v){
                     if(isset($list[$v])){
                         $list[$v]['turn'] = $k;
-                        $list[$v]['color'] = self::$gameConf['color'][$v];
+                        $list[$v]['color'] = self::$gameConf['color'][$k];
                     }
                    
                 }
@@ -354,8 +363,6 @@ class Events
                     $new_message = array(
                         'type'=>'callCaptain',
                         'message'=>'money_not_enough',
-                        'from_client_id'=>$client_id,
-                        'to_client_id'=>$client_id,
                         'price'=>$now_price,
                     );
                     Gateway::sendToCurrentClient(json_encode($new_message));
@@ -372,8 +379,6 @@ class Events
                         $new_message = array(
                             'type'=>'callCaptain',
                             'message'=>'no_money',
-                            'from_client_id'=>$client_id,
-                            'to_client_id'=>$client_id,
                             'price'=>$now_price,
                         );
                         Gateway::sendToCurrentClient(json_encode($new_message));
@@ -422,8 +427,6 @@ class Events
 
                 $new_message = array(
                     'type'=>'callCaptain',
-                    'from_client_id'=>$client_id,
-                    'to_client_id'=>'all',
                     'next_info'=>$nextInfo,
                     'price'=>$message_data['price'],
                     'highest'=>$uid,
@@ -487,7 +490,7 @@ class Events
                     'give_up'=>1,
                 );
 
-                if(count($turn) - count($room_status['give_up']) == 1){ //产生队长
+                if(count($turn) - count($room_status['give_up']) == 1){ //产生队长  TODO 暂不考虑都放弃的情况
                     //扣钱
                     $res = self::addMoney($captain,$room_id,$now_price,2);
 
@@ -648,7 +651,12 @@ class Events
                     return;
                 }
 
-                $room_status['goods'][] = $goodsId;
+                
+                if(empty($room_status['goods'])){
+                    $room_status['goods'][1] = $goodsId;
+                }else{
+                    $room_status['goods'][] = $goodsId;
+                }
 
                 self::$rd->set($room_status_key,serialize($room_status));
 
@@ -700,6 +708,15 @@ class Events
                 if($step>5){ // 最多设置第五格
                     return;
                 }
+
+                $room_step = 0;
+                if(isset($room_status['step'])){
+                    $room_step = $room_status['step'];
+                }
+                if($room_step != 3){
+                    return;
+                }
+
                 $room_status['ship'][$shipId] = $step;
                 self::$rd->set($room_status_key,serialize($room_status));
                 $new_message = array(
@@ -741,6 +758,15 @@ class Events
                 if($captain != $uid){
                     return;
                 }
+
+                $room_step = 0;
+                if(isset($room_status['step'])){
+                    $room_step = $room_status['step'];
+                }
+                if($room_step != 3){
+                    return;
+                }
+
                 $ship_step = array();
                 if(isset($room_status['ship'])){
                     $ship_step = $room_status['ship'];
@@ -757,8 +783,6 @@ class Events
                     $new_message = array(
                         'type'=>'confirmOutset',
                         'message'=>'not_nine',
-                        'from_client_id'=>$client_id,
-                        'to_client_id'=>$client_id,
                     );
                     return Gateway::sendToCurrentClient(json_encode($new_message));
                 }
@@ -767,14 +791,14 @@ class Events
                 $ship_key = "m_ship_{$room_id}"; //轮船
                 self::$rd->delete($ship_key); 
                 $goodsArr = $room_status['goods'];
-                //$goodsConf = self::gameConf['goods'];
+                //$goodsConf = self::$gameConf['goods'];
                 for($i=1;$i<=3;$i++){
                     if(isset($ship_step[$i])){
                         $step = $ship_step[$i];
                     }else{
                         $step = 0;
                     }
-                    $goodsId = $goodsArr[$i-1];
+                    $goodsId = $goodsArr[$i];
                     $shipInfo = array(
                         'id' => $i,
                         'goods_id'=>$goodsId,
@@ -785,13 +809,263 @@ class Events
                     self::$rd->hset($ship_key,$i,serialize($shipInfo));
                 }
 
+
+                $room_status['step'] = 4;
+                self::$rd->set($room_status_key,serialize($room_status));
                 $new_message = array(
                     'type'=>'confirmOutset', 
-                    'from_client_id'=>$client_id,
-                    'from_client_name' =>$client_name,
-                    'to_client_id'=>'all',
                     'ship_step'=>$ship_step,
                 ); 
+
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+            // 安排工人
+            case 'setWorker':
+
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+                
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+
+                $room_step = 0;
+                if(isset($room_status['step'])){
+                    $room_step = $room_status['step'];
+                }
+                if($room_step != 4){
+                    return;
+                }
+                $uid = self::getUid($room_id,$client_id);
+                $turn = $room_status['turn'];
+                $now = $room_status['now'];
+                if($turn[$now] != $uid){ // 不是自己回合
+                    return;
+                }
+
+                if($message_data['action'] == 'boarding'){ // 上船
+
+                    if(isset($message_data['shipId'])){
+                        $shipId = $message_data['shipId'];
+                    }else{
+                        return;
+                    }
+                    $ship_key = "m_ship_{$room_id}"; //轮船
+                    $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
+
+                    $goodsId = $shipInfo['goods_id'];
+                    $shipCells = $shipInfo['cells'];
+                    $goodConf = self::$gameConf['goods'];
+                    $cellsNum = count($goodConf[$goodsId]['cells']);
+                    $shipWorker = count($shipCells);
+
+                    if($shipWorker >= $cellsNum){ // 船满员
+                        return; 
+                    }
+
+                    if(empty($shipCells)){
+                        $shipInfo['cells'][1] = $uid;
+                    }else{
+                        $shipInfo['cells'][] = $uid;
+                    }
+
+                    $n = count($shipInfo['cells']);
+                    $price = $goodConf['cells'][$n];
+
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold < $price){
+                        $new_message = array(
+                            'type'=>'boarding',
+                            'message'=>'no_money',
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+                    $res = self::addMoney($uid,$room_id,$price,2);
+                    if($res){
+                        self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+                        $captain = $room_status['captain']; 
+                        $captain_turn = $turn[$captain];
+                        $nextInfo = self::getNextPlayer($now,$turn);   
+                        $next = $nextInfo['next'];
+                        $room_status['now'] = $next;
+                        $play = 0;
+                        if($next == $captain_turn){ // 开始掷骰子
+                            $room_status['play'] = 1;
+                            $play = 1;
+                        }
+                        self::$rd -> set($room_status_key,serialize($room_status));
+                        $userInfo = array(
+                            'uid'=>$uid,
+                            'turn'=>$turn,
+                            'color'=>self::$gameConf['color'][$turn],
+                        );
+                        $new_message = array(
+                            'type'=>'boarding', 
+                            'cell'=>$n,
+                            'play'=>$play,
+                            'user_info'=>$userInfo,
+                            'next'=>$next,
+                            'ship_id'=>$shipId,
+                        ); 
+
+                    }else{
+
+                    }
+
+
+                }elseif($message_data['action'] == 'port'){// 押港口或修理厂
+
+                    if(isset($message_data['portId'])){
+                        $portId = $message_data['portId'];
+                    }else{
+                        return;
+                    }
+
+                    $port_key = "m_port_{$room_id}"; // 港口&修理厂
+                    $portInfo = unserialize(self::$rd->get($port_key));
+
+                    if(isset($portInfo[$portId])){ // 已经有人
+                        return;
+                    }
+
+                    $portConf = self::$gameConf['port'];
+                    if(isset($portConf[$portId])){
+                        $portMsg = $portConf[$portId];
+                    }else{
+                        return;
+                    }
+
+                    $price = $portMsg['price'];
+
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold < $price){
+                        $new_message = array(
+                            'type'=>'boarding',
+                            'message'=>'no_money',
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+                    $res = self::addMoney($uid,$room_id,$price,2);
+
+                    if($res){
+                        $portInfo[$portId] = $uid;
+                        self::$rd->set($port_key,serialize($portInfo));
+
+                        $captain = $room_status['captain']; 
+                        $captain_turn = $turn[$captain];
+                        $nextInfo = self::getNextPlayer($now,$turn);   
+                        $next = $nextInfo['next'];
+                        $room_status['now'] = $next;
+                        $play = 0;
+                        if($next == $captain_turn){ // 开始掷骰子
+                            $room_status['play'] = 1;
+                            $play = 1;
+                        }
+                        self::$rd -> set($room_status_key,serialize($room_status));
+                        $userInfo = array(
+                            'uid'=>$uid,
+                            'turn'=>$turn,
+                            'color'=>self::$gameConf['color'][$turn],
+                        );
+                        $new_message = array(
+                            'type'=>'port', 
+                            'play'=>$play,
+                            'user_info'=>$userInfo,
+                            'next'=>$next,
+                            'port_id'=>$portId,
+                        ); 
+
+                    }else{
+
+                    }
+
+
+                }elseif($message_data['action'] == 'pilot'){ // 领航员
+
+                    if(isset($message_data['pilotId'])){
+                        $pilotId = $message_data['pilotId'];
+                    }else{
+                        return;
+                    }
+
+                    $pilot_key = "m_pilot_{$room_id}"; // 领航员
+                    $pilotInfo = unserialize(self::$rd->get($pilot_key));
+
+                    if(isset($pilotInfo[$pilotId])){ // 已经有人
+                        return;
+                    }
+
+                    $pilotConf = self::$gameConf['pilot'];
+                    if(isset($pilotConf[$pilotId])){
+                        $pilotMsg = $pilotConf[$pilotId];
+                    }else{
+                        return;
+                    }
+
+                    $price = $pilotMsg['price'];
+
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold < $price){
+                        $new_message = array(
+                            'type'=>'boarding',
+                            'message'=>'no_money',
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+                    $res = self::addMoney($uid,$room_id,$price,2);
+
+                    if($res){
+                        $pilotInfo[$pilotId] = $uid;
+                        self::$rd->set($pilot_key,serialize($pilotInfo));
+
+                        $captain = $room_status['captain']; 
+                        $captain_turn = $turn[$captain];
+                        $nextInfo = self::getNextPlayer($now,$turn);   
+                        $next = $nextInfo['next'];
+                        $room_status['now'] = $next;
+                        $play = 0;
+                        if($next == $captain_turn){ // 开始掷骰子
+                            $room_status['play'] = 1;
+                            $play = 1;
+                        }
+                        self::$rd -> set($room_status_key,serialize($room_status));
+                        $userInfo = array(
+                            'uid'=>$uid,
+                            'turn'=>$turn,
+                            'color'=>self::$gameConf['color'][$turn],
+                        );
+                        $new_message = array(
+                            'type'=>'pilot', 
+                            'play'=>$play,
+                            'user_info'=>$userInfo,
+                            'next'=>$next,
+                            'pilot_id'=>$pilotId,
+                        ); 
+
+                    }else{
+
+                    }
+
+
+                }elseif($message_data['action'] == 'pirate'){// 海盗
+
+                    $pirate_key = "m_pirate_{$room_id}"; // 领航员
+                    $pirateInfo = unserialize(self::$rd->get($pirate_key));
+
+                    if(count($pirateInfo) >= 2){ // 海盗已满
+                        return;
+                    }
+
+
+
+                }
+                
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
@@ -818,8 +1092,6 @@ class Events
                 
                 $new_message = array(
                     'type'=>'playPoint',
-                    'from_client_id'=>$client_id,
-                    'from_client_name' =>$client_name,
                     'to_client_id'=>'all',
                     'point'=>$pointArr, 
                 );
