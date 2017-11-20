@@ -98,14 +98,14 @@
 		
 		<script type="text/javascript">
 
-			$(function(){
-				var point = $(".point");
-				point.click(function(){
+			// $(function(){
+			// 	var point = $(".point");
+			// 	point.click(function(){
 				
-					ws.send('{"type":"playPoint","num":"3"}');
+			// 		ws.send('{"type":"playPoint","num":"3"}');
 					
-				});
-			});
+			// 	});
+			// });
 
 			function playPoint(pointArr){
 			
@@ -440,8 +440,26 @@
 							if(captain == 1){
 								endShipOutset();
 							}
+							initGame(); // 开始游戏
+
 						}
 
+						break;
+					// 上船
+					case 'boarding':
+						showBoarding(data);
+						break;
+					// 押港口或修理厂
+					case 'port':
+						break;
+					// 领航员
+					case 'pilot':
+						break;
+					// 海盗
+					case 'pirate':
+						break;
+					// 保险
+					case 'insurance':
 						break;
 					// 掷骰子
 					case 'playPoint':
@@ -459,8 +477,8 @@
 			}
 			
 		</script>
-
-	    <div class="point">
+		<div class="pwindow">
+	    <div class="point" id="point">
 			<div id="dice1" class="dice1 dice_1"></div>
 			<div id="dice2" class="dice2 dice_1"></div>
 			<div id="dice3" class="dice3 dice_1"></div>					   		
@@ -468,10 +486,10 @@
 			<div class="pcolor" id="p2"></div>
 			<div class="pcolor" id="p3"></div>
 		</div>
-		
+		</div>
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
-		<input type="button" onclick="initGame()" value="start1"> 
+		<input type="button" onclick="startPlayPoint()" value="start1"> 
 
 	</body>
 </html>

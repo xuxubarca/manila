@@ -92,7 +92,8 @@ return array(
 		),
 	),
 	
-
+	'pirate'=>5, //海盗价格
+	'insurance'=>10,// 保险公司费用
 
 
 

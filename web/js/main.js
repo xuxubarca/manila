@@ -120,6 +120,11 @@ function showPrompt() {
 	});
 }
 
+// 开始游戏
+function start(){
+	ws.send('{"type":"start"}');
+}
+
 //叫地主
 function callCaptain(nowPrice) {
 	PostbirdAlertBox.prompt({
@@ -164,9 +169,13 @@ function getCaptainMessage(price,captain){
 // 当前回合玩家
 function nowTurn(turn){
 
-	$('#player div').each(function(i){
-		$(this).css({'background-color' : "#FFFFFF"});	
-	})
+	// $('#player div').each(function(i){
+	// 	$(this).css({'background-color' : "#FFFFFF"});	
+	// })
+
+	for(var i=0;i<=5;i++){
+		$('#user'+i).css("background-color","#FFFFFF");
+	}
 
 	$('#user'+turn).css("background-color","#FF8C00");
 }
@@ -489,8 +498,13 @@ function pilot(pilotId){
 }
 
 // 当海盗
-function pirate(pirateId){
+function pirate(){
 	ws.send('{"type":"setWorker","action":"pirate"}');
+}
+
+// 保险公司
+function insurance(){
+	ws.send('{"type":"setWorker","action":"insurance"}');
 }
 
 // 队长买股票
@@ -498,10 +512,93 @@ function buystock(stockId){
 	ws.send('{"type":"buystock","stockId":"'+ stockId +'"}');
 }
 
-// 开始游戏
-function start(){
-	ws.send('{"type":"start"}');
+// 登船展示
+function showBoarding(data){
+	var cell = data['cell'];
+	var color = data['user_info']['color'];
+	var next = data['next'];
+	var shipId = data['ship_id'];
+	var play = data['play'];
+	nowTurn(next);
+	var n = 3 - cell;
+	document.querySelectorAll('#ship'+ shipId +' > div')[n].style.background = color;
+	if(captain==1 && play==1){
+		startPlayPoint();
+	}
 }
+// 港口&修理厂展示
+function showPort(data){
+	var portId = data['port_id'];
+	var color = data['user_info']['color'];
+	var next = data['next'];
+	var play = data['play'];
+	nowTurn(next);
+	if(portId<=3){
+		var n = 16 + portId;
+	}else{
+		var n = 93 - portId;
+	}
+	
+	document.querySelectorAll('#box > div')[n].style.background = color;
+
+	if(captain==1 && play==1){
+		startPlayPoint();
+	}
+}
+
+// 领航员
+function showPirate(data){
+	var pirateId = data['pirate_id'];
+	var color = data['user_info']['color'];
+	var next = data['next'];
+	var play = data['play'];
+	nowTurn(next);
+	var n = 2 + pirateId;
+	document.querySelectorAll('#box > div')[n].style.background = color;
+
+	if(captain==1 && play==1){
+		startPlayPoint();
+	}
+}
+
+// 海盗
+function showPilot(data){
+	var pilotId = data['pilot_id'];
+	var color = data['user_info']['color'];
+	var next = data['next'];
+	var play = data['play'];
+	nowTurn(next);
+	if(pilotId == 1){
+		var n = 16;
+	}else if(pilotId == 2){
+		var n = 6;
+	}
+	document.querySelectorAll('#box > div')[n].style.background = color;
+
+	if(captain==1 && play==1){
+		startPlayPoint();
+	}
+}
+// 开始掷骰子
+function startPlayPoint(){
+	document.getElementById('point').setAttribute("onclick","getServerPoint()");
+	document.getElementById('dice1').style.borderColor = '#FF8000';
+	document.getElementById('dice2').style.borderColor = '#FF8000';
+	document.getElementById('dice3').style.borderColor = '#FF8000';
+}
+// 结束掷骰子
+function endPlayPoint(){
+	document.getElementById('point').removeAttribute("onclick");
+	document.getElementById('dice1').style.borderColor = '#FFFFFF';
+	document.getElementById('dice2').style.borderColor = '#FFFFFF';
+	document.getElementById('dice3').style.borderColor = '#FFFFFF';
+}
+// 获得点数
+function getServerPoint(){
+	ws.send('{"type":"playPoint","num":"3"}');
+}
+
+
 
 function test(){
 	//document.querySelectorAll('#list > div')[20].onclick = click();

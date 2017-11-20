@@ -647,7 +647,7 @@ class Events
                 if(count($goodsArr) >=3){
                     return;
                 }
-                if(array_key_exists($goodsId,$goodsArr)){
+                if(in_array($goodsId,$goodsArr)){
                     return;
                 }
 
@@ -809,7 +809,7 @@ class Events
                     self::$rd->hset($ship_key,$i,serialize($shipInfo));
                 }
 
-
+                $room_status['round'] = 1; // 回合
                 $room_status['step'] = 4;
                 self::$rd->set($room_status_key,serialize($room_status));
                 $new_message = array(
@@ -839,12 +839,25 @@ class Events
                 if($room_step != 4){
                     return;
                 }
+
+                // 回合错误
+                if(isset($room_status['round']) && $room_status['round']>=3){
+                    return;
+                }
+
                 $uid = self::getUid($room_id,$client_id);
                 $turn = $room_status['turn'];
                 $now = $room_status['now'];
+                 
                 if($turn[$now] != $uid){ // 不是自己回合
                     return;
                 }
+
+                $captain = $room_status['captain']; 
+                $captain_turn = array_search($captain, $turn);
+                $my_turn = array_search($uid, $turn);    
+                $nextInfo = self::getNextPlayer($now,$turn);   
+                $next = $nextInfo['next'];
 
                 if($message_data['action'] == 'boarding'){ // 上船
 
@@ -873,7 +886,7 @@ class Events
                     }
 
                     $n = count($shipInfo['cells']);
-                    $price = $goodConf['cells'][$n];
+                    $price = $goodConf[$goodsId]['cells'][$n];
 
                     $myGold = self::getMoney($uid,$room_id);
                     if($myGold < $price){
@@ -887,10 +900,7 @@ class Events
                     $res = self::addMoney($uid,$room_id,$price,2);
                     if($res){
                         self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
-                        $captain = $room_status['captain']; 
-                        $captain_turn = $turn[$captain];
-                        $nextInfo = self::getNextPlayer($now,$turn);   
-                        $next = $nextInfo['next'];
+                        
                         $room_status['now'] = $next;
                         $play = 0;
                         if($next == $captain_turn){ // 开始掷骰子
@@ -900,8 +910,8 @@ class Events
                         self::$rd -> set($room_status_key,serialize($room_status));
                         $userInfo = array(
                             'uid'=>$uid,
-                            'turn'=>$turn,
-                            'color'=>self::$gameConf['color'][$turn],
+                            'turn'=>$my_turn,
+                            'color'=>self::$gameConf['color'][$my_turn],
                         );
                         $new_message = array(
                             'type'=>'boarding', 
@@ -956,10 +966,6 @@ class Events
                         $portInfo[$portId] = $uid;
                         self::$rd->set($port_key,serialize($portInfo));
 
-                        $captain = $room_status['captain']; 
-                        $captain_turn = $turn[$captain];
-                        $nextInfo = self::getNextPlayer($now,$turn);   
-                        $next = $nextInfo['next'];
                         $room_status['now'] = $next;
                         $play = 0;
                         if($next == $captain_turn){ // 开始掷骰子
@@ -969,8 +975,8 @@ class Events
                         self::$rd -> set($room_status_key,serialize($room_status));
                         $userInfo = array(
                             'uid'=>$uid,
-                            'turn'=>$turn,
-                            'color'=>self::$gameConf['color'][$turn],
+                            'turn'=>$my_turn,
+                            'color'=>self::$gameConf['color'][$my_turn],
                         );
                         $new_message = array(
                             'type'=>'port', 
@@ -1024,10 +1030,6 @@ class Events
                         $pilotInfo[$pilotId] = $uid;
                         self::$rd->set($pilot_key,serialize($pilotInfo));
 
-                        $captain = $room_status['captain']; 
-                        $captain_turn = $turn[$captain];
-                        $nextInfo = self::getNextPlayer($now,$turn);   
-                        $next = $nextInfo['next'];
                         $room_status['now'] = $next;
                         $play = 0;
                         if($next == $captain_turn){ // 开始掷骰子
@@ -1037,8 +1039,8 @@ class Events
                         self::$rd -> set($room_status_key,serialize($room_status));
                         $userInfo = array(
                             'uid'=>$uid,
-                            'turn'=>$turn,
-                            'color'=>self::$gameConf['color'][$turn],
+                            'turn'=>$my_turn,
+                            'color'=>self::$gameConf['color'][$my_turn],
                         );
                         $new_message = array(
                             'type'=>'pilot', 
@@ -1055,15 +1057,96 @@ class Events
 
                 }elseif($message_data['action'] == 'pirate'){// 海盗
 
-                    $pirate_key = "m_pirate_{$room_id}"; // 领航员
+                    $pirate_key = "m_pirate_{$room_id}"; // 海盗
                     $pirateInfo = unserialize(self::$rd->get($pirate_key));
 
                     if(count($pirateInfo) >= 2){ // 海盗已满
                         return;
                     }
+                    $price = self::$gameConf['pirate'];
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold < $price){
+                        $new_message = array(
+                            'type'=>'boarding',
+                            'message'=>'no_money',
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+                    $res = self::addMoney($uid,$room_id,$price,2);
 
+                    if($res){
+                        $pirateInfo[] = $uid;
+                        self::$rd->set($pirate_key,serialize($pirateInfo));
+                        $pirateId = count($pirateInfo);
 
+                        $room_status['now'] = $next;
+                        $play = 0;
+                        if($next == $captain_turn){ // 开始掷骰子
+                            $room_status['play'] = 1;
+                            $play = 1;
+                        }
+                        self::$rd -> set($room_status_key,serialize($room_status));
+                        $userInfo = array(
+                            'uid'=>$uid,
+                            'turn'=>$my_turn,
+                            'color'=>self::$gameConf['color'][$my_turn],
+                        );
+                        $new_message = array(
+                            'type'=>'pirate', 
+                            'play'=>$play,
+                            'user_info'=>$userInfo,
+                            'next'=>$next,
+                            'pirate_id'=>$pirateId,
+                        ); 
+                    }else{
 
+                    }
+
+                }elseif($message_data['action'] == 'insurance'){ // 保险公司
+                    $insurance_key = "m_insurance_{$room_id}"; // 海盗
+                    $insuranceInfo = unserialize(self::$rd->get($insurance_key));   
+                    if(!empty($insuranceInfo)){ // 有人
+                        return;
+                    }
+
+                    $price = self::$gameConf['insurance'];
+                    $myGold = self::getMoney($uid,$room_id);
+                    if($myGold < $price){
+                        $new_message = array(
+                            'type'=>'boarding',
+                            'message'=>'no_money',
+                        );
+                        Gateway::sendToCurrentClient(json_encode($new_message));
+                        return;
+                    }
+                    $res = self::addMoney($uid,$room_id,$price,1); // 加钱
+
+                    if($res){
+                        $insuranceInfo[] = $uid;
+                        self::$rd->set($insurance_key,serialize($insuranceInfo));
+
+                        $room_status['now'] = $next;
+                        $play = 0;
+                        if($next == $captain_turn){ // 开始掷骰子
+                            $room_status['play'] = 1;
+                            $play = 1;
+                        }
+                        self::$rd -> set($room_status_key,serialize($room_status));
+                        $userInfo = array(
+                            'uid'=>$uid,
+                            'turn'=>$my_turn,
+                            'color'=>self::$gameConf['color'][$my_turn],
+                        );
+                        $new_message = array(
+                            'type'=>'insurance', 
+                            'play'=>$play,
+                            'user_info'=>$userInfo,
+                            'next'=>$next,
+                        ); 
+                    }else{
+
+                    }
                 }
                 
 
@@ -1078,6 +1161,40 @@ class Events
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
 
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+
+                $room_step = 0;
+                if(isset($room_status['step'])){
+                    $room_step = $room_status['step'];
+                }
+                if($room_step != 4){
+                    return;
+                }
+                $uid = self::getUid($room_id,$client_id);
+                $turn = $room_status['turn'];
+                $now = $room_status['now'];
+                 
+                if($turn[$now] != $uid){ // 不是自己回合
+                    return;
+                }
+                if($room_status['play'] != 1){ // 没到掷骰子的时间
+                    return;
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+                // $room_status['round'] += 1; // 回合
                 $num = $message_data['num'];
                 if($num >0){
                     $pointArr = array();
