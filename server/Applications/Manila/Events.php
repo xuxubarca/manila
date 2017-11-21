@@ -103,7 +103,7 @@ class Events
                 'color'=>$colorId,
                 'step'=>0, //0~13
                 'cell'=>array(1=>$uid,2=>$uid...),
-                'status'=>0,
+                'status'=>0, 0 正常 1 入港 2 入修理厂 3 被劫持
             )
 
             港口&修理厂:  m_port_{$room_id} 
@@ -841,7 +841,7 @@ class Events
                 }
 
                 // 回合错误
-                if(isset($room_status['round']) && $room_status['round']>=3){
+                if(isset($room_status['round']) && $room_status['round']>3){
                     return;
                 }
 
@@ -866,9 +866,12 @@ class Events
                     }else{
                         return;
                     }
-                    $ship_key = "m_ship_{$room_id}"; //轮船
+                    $ship_key = "m_ship_{$room_id}"; // 轮船
                     $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
 
+                    if($shipInfo['status'] == 1){ // 已进港
+                        return;
+                    }
                     $goodsId = $shipInfo['goods_id'];
                     $shipCells = $shipInfo['cells'];
                     $goodConf = self::$gameConf['goods'];
@@ -1027,7 +1030,8 @@ class Events
                     $res = self::addMoney($uid,$room_id,$price,2);
 
                     if($res){
-                        $pilotInfo[$pilotId] = $uid;
+                        $pilotInfo[$pilotId]['uid'] = $uid;
+                        $pilotInfo[$pilotId]['status'] = 0;
                         self::$rd->set($pilot_key,serialize($pilotInfo));
 
                         $room_status['now'] = $next;
@@ -1076,7 +1080,10 @@ class Events
                     $res = self::addMoney($uid,$room_id,$price,2);
 
                     if($res){
-                        $pirateInfo[] = $uid;
+                        $pirateInfo[] = array(
+                            'uid' => $uid,
+                            'status' => 0,
+                        );
                         self::$rd->set($pirate_key,serialize($pirateInfo));
                         $pirateId = count($pirateInfo);
 
@@ -1104,7 +1111,7 @@ class Events
                     }
 
                 }elseif($message_data['action'] == 'insurance'){ // 保险公司
-                    $insurance_key = "m_insurance_{$room_id}"; // 海盗
+                    $insurance_key = "m_insurance_{$room_id}"; // 保险
                     $insuranceInfo = unserialize(self::$rd->get($insurance_key));   
                     if(!empty($insuranceInfo)){ // 有人
                         return;
@@ -1172,7 +1179,15 @@ class Events
                 if($room_step != 4){
                     return;
                 }
+                if($room_status['round'] > 3){ // 三回合结束
+                    return;
+                }
+                $captain = $room_status['captain'];
                 $uid = self::getUid($room_id,$client_id);
+                if($captain != $uid){
+                    return;
+                }
+
                 $turn = $room_status['turn'];
                 $now = $room_status['now'];
                  
@@ -1183,18 +1198,6 @@ class Events
                     return;
                 }
 
-
-
-
-
-
-
-
-
-
-
-
-                // $room_status['round'] += 1; // 回合
                 $num = $message_data['num'];
                 if($num >0){
                     $pointArr = array();
@@ -1207,13 +1210,169 @@ class Events
                     return;
                 }
                 
+
+                $pirateRound = 0; // 是否是海盗回合
+                $ship_key = "m_ship_{$room_id}"; //轮船
+                for($i=1;$i<=$num;$i++){
+                    $shipInfo = unserialize(self::$rd->hget($ship_key,$i));
+                    $shipStep = $shipInfo['step'];
+                    if($shipStep > 13){ // 已进港
+                        unset($pointArr[$i]);
+                        continue;
+                    }
+                    $shipInfo['step'] = $shipStep + $pointArr[$i];
+                    if($shipInfo['step'] > 13){ // 进港
+                        $shipInfo['status'] = 1;
+                    }elseif($shipInfo['step'] == 13){
+                        $pirateRound = 1;
+                    }
+
+                    self::$rd->hset($ship_key,$i,serialize($shipInfo));
+                }
+                $pirateInfo = array();
+                if($pirateRound){
+                    $pirate_key = "m_pirate_{$room_id}"; // 海盗
+                    $pirateInfo = unserialize(self::$rd->get($pirate_key));
+                    if(!empty($pirateInfo)){
+                        $turn = $room_status['turn'];
+                        $pirateUid = $pirateInfo[0]['uid'];
+                        $pirateTurn = array_search($captain, $turn);
+                        $room_status['pirate'] = 0; // 回合
+
+                        $pirateInfo['uid'] = $pirateUid;
+                        $pirateInfo['turn'] = $pirateTurn;
+                    }
+                }
+                
+                $room_status['round'] += 1; // 回合
+                self::$rd -> set($room_status_key,serialize($room_status));
                 $new_message = array(
                     'type'=>'playPoint',
-                    'to_client_id'=>'all',
+                    'point'=>$pointArr, 
+                );
+                if(!empty($pirateInfo)){
+                    $new_message['pirate'] = $pirateInfo;
+                }
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+
+             // 掷骰子
+            case 'playPointTest':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                $num = $message_data['num'];
+                if($num >0){
+                    $pointArr = array();
+                    for($i=1;$i<=$num;$i++){
+                        $rand = mt_rand(1,6);
+                        $pointArr[$i] = $rand;
+                    }
+
+                }else{
+                    return;
+                }
+                //unset($pointArr[1]);
+                $new_message = array(
+                    'type'=>'playPoint',
                     'point'=>$pointArr, 
                 );
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
+            // 海盗登船
+            case 'pirateBoarding':
 
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+                
+                if(isset($message_data['ship_id'])){
+                    $shipId = $message_data['ship_id'];
+                }else{
+                    return;
+                }
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+
+                $room_step = 0;
+                if(isset($room_status['step'])){
+                    $room_step = $room_status['step'];
+                }
+                if($room_step != 4){
+                    return;
+                }
+
+                $round = $room_status['round']; 
+                if($round<3 || $round>4){
+                    return;
+                }
+
+                $ship_key = "m_ship_{$room_id}"; //轮船
+                $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
+                if($shipInfo['step'] != 13){
+                    return;
+                }
+
+                $uid = self::getUid($room_id,$client_id);
+                $pirate_key = "m_pirate_{$room_id}"; // 海盗
+                $pirateInfo = unserialize(self::$rd->get($pirate_key));
+
+                $pirateId = null;
+                for($i=0;$i<=1;$i++){
+                    if($pirateInfo[$i]['status'] != 1 && !isset($pirateInfo[$i]['round'][$round])){
+                        $pirateUid = $pirateInfo[$i]['uid'];
+                        if($pirateUid != $uid){
+                            return;
+                        }
+                        $pirateId = $i;
+                        break;
+                    }
+                }
+
+                if($pirateInfo == null){
+                    return;
+                }else{
+
+                    if($round == 3){ // 上船
+                        $goodsId = $shipInfo['goods_id'];
+                        $shipCells = $shipInfo['cells'];
+                        $goodConf = self::$gameConf['goods'];
+                        $cellsNum = count($goodConf[$goodsId]['cells']);
+                        $shipWorker = count($shipCells);
+
+                        if($shipWorker >= $cellsNum){ // 船满员
+                            return; 
+                        }
+
+                        if(empty($shipCells)){
+                            $shipInfo['cells'][1] = $uid;
+                        }else{
+                            $shipInfo['cells'][] = $uid;
+                        }
+
+                        $pirateInfo[$pirateId]['status'] = 1; 
+                        self::$rd->set($pirate_key,serialize($pirateInfo));
+                        self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+                    }elseif($round == 4){ // 劫船
+
+                        unset($shipInfo['cells']);
+                        $shipInfo['cells'][1] = $uid;
+                        $shipInfo['status'] = 3;
+
+                        $pirateInfo[$pirateId]['status'] = 1; 
+                        self::$rd->set($pirate_key,serialize($pirateInfo));
+                        self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+
+                    }
+                }
+
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
             //发言
             case 'say':
 
@@ -1498,5 +1657,9 @@ class Events
             return false;
         }
     }
-  
+    // 结算
+    public function balance(){
+
+    }
+
 }

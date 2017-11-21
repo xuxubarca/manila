@@ -108,21 +108,26 @@
 			// });
 
 			function playPoint(pointArr){
-			
+				if(pointArr[1]){
 					var a = '#dice1';
 					var c = 'dice1';
 					var n = pointArr[1];
 					getPoint(a,c,n);
-					
+				}
+				
+				if(pointArr[2]){
 					var a = '#dice2';
 					var c = 'dice2';
 					var n = pointArr[2];
 					getPoint(a,c,n);
-					
+				}
+				
+				if(pointArr[3]){
 					var a = '#dice3';
 					var c = 'dice3';
 					var n = pointArr[3];
 					getPoint(a,c,n);
+				}
 			}
 			
 			function getPoint(a,c,num){
@@ -226,6 +231,7 @@
 						}
 					}
 					str += 	'<div class="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
+					str += 	'<div class="msg"></div>';
 				// str += '<div class="ship" id="ship1">';
 				// for (var j = 0; j < 4; j++) {
 				// 	str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
@@ -451,21 +457,29 @@
 						break;
 					// 押港口或修理厂
 					case 'port':
+						showPort(data);
 						break;
 					// 领航员
 					case 'pilot':
+						showPilot(data);
 						break;
 					// 海盗
 					case 'pirate':
+						showPirate(data);
 						break;
 					// 保险
 					case 'insurance':
+						showInsurance(data);
 						break;
 					// 掷骰子
 					case 'playPoint':
 						playPoint(data['point']);
 						for(var i=1;i<=3;i++){
 							shipMovePoint(i,data['point'][i]);
+						}
+						// 海盗回合
+						if(data['pirate']){
+
 						}
 						break;
 					// 用户退出 更新用户列表

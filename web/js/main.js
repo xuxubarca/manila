@@ -579,6 +579,18 @@ function showPilot(data){
 		startPlayPoint();
 	}
 }
+// 保险
+function showInsurance(){
+	var color = data['user_info']['color'];
+	var next = data['next'];
+	var play = data['play'];
+	nowTurn(next);
+	document.querySelectorAll('#box > div')[92].style.background = color;
+
+	if(captain==1 && play==1){
+		startPlayPoint();
+	}
+}
 // 开始掷骰子
 function startPlayPoint(){
 	document.getElementById('point').setAttribute("onclick","getServerPoint()");
