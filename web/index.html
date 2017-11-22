@@ -230,8 +230,9 @@
 							str += '<div class="div1" style="left:' + j*120 + 'px;top:' + i*60 + 'px"></div>';
 						}
 					}
-					str += 	'<div class="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
-					str += 	'<div class="msg"></div>';
+					str += 	'<div class="confirm" id="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
+					str += 	'<div class="confirm" id="pirateGiveUp"><a class="btn btn-primary" href="javascript:pirateGiveUp(2);">放弃登船</a></div>';
+					str += 	'<div class="msg" id="msg"></div>';
 				// str += '<div class="ship" id="ship1">';
 				// for (var j = 0; j < 4; j++) {
 				// 	str += '<div class="shipCell" style="left:' + j*60 + 'px;top:' + 0 + 'px"></div>';
@@ -400,6 +401,7 @@
 						}
 						
 						break;
+					// 刷新金币
 					case 'moneyRefresh':
 						moneyRefresh(data['turn'],data['gold']);
 						break;
@@ -479,8 +481,41 @@
 						}
 						// 海盗回合
 						if(data['pirate']){
-
+							nowTurn(data['pirate']['turn']);
+							if(my_turn == data['pirate']['turn']){
+								startPirateBoarding();
+							}
 						}
+						break;
+					// 海盗登船
+					case 'pirateBoarding':
+
+						if(data['user_info']['uid'] == uid){
+							endPirateBoarding();
+						}
+
+						if(data['action'] == 'robbery'){
+							if(data['user_info']['uid'] == uid){
+
+							}else{
+
+							}
+						}else{
+							nowTurn(data['next']);
+							if(data['pirate'] == 1){ // 下回合还是海盗回合
+								if(my_turn == data['next']){
+									startPirateBoarding();
+								}
+							}
+						}
+					
+						break;
+					// 海盗选择轮船是否进港
+					case 'pirateChoose':
+						if(data['user_info'] == uid){
+							endPirateBoarding();
+						}
+
 						break;
 					// 用户退出 更新用户列表
 					case 'logout':
@@ -503,7 +538,7 @@
 		</div>
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
-		<input type="button" onclick="startPlayPoint()" value="start1"> 
+		<input type="button" onclick="startPirateBoarding()" value="start1"> 
 
 	</body>
 </html>

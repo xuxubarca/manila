@@ -103,7 +103,8 @@ class Events
                 'color'=>$colorId,
                 'step'=>0, //0~13
                 'cell'=>array(1=>$uid,2=>$uid...),
-                'status'=>0, 0 正常 1 入港 2 入修理厂 3 被劫持
+                'status'=>0, 0 正常 1 入港 2 入修理厂
+                'pirate'=>$uid, // 轮船被劫持 海盗uid
             )
 
             港口&修理厂:  m_port_{$room_id} 
@@ -1237,7 +1238,7 @@ class Events
                         $turn = $room_status['turn'];
                         $pirateUid = $pirateInfo[0]['uid'];
                         $pirateTurn = array_search($captain, $turn);
-                        $room_status['pirate'] = 0; // 回合
+                        $room_status['pirate'] = 0; // 海盗回合
 
                         $pirateInfo['uid'] = $pirateUid;
                         $pirateInfo['turn'] = $pirateTurn;
@@ -1293,8 +1294,11 @@ class Events
                 
                 if(isset($message_data['ship_id'])){
                     $shipId = $message_data['ship_id'];
-                }else{
-                    return;
+                }
+
+                $giveUp = false;
+                if(isset($message_data['action']) && $message_data['action']=='give_up'){
+                    $giveUp = true;
                 }
 
                 $room_status_key = "m_room_status_{$room_id}";//房间状态
@@ -1313,15 +1317,25 @@ class Events
                     return;
                 }
 
-                $ship_key = "m_ship_{$room_id}"; //轮船
-                $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
-                if($shipInfo['step'] != 13){
-                    return;
+                if(!$giveUp){
+                    $ship_key = "m_ship_{$room_id}"; //轮船
+                    $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
+                    if($shipInfo['step'] != 13){
+                        return;
+                    }
                 }
-
+                
                 $uid = self::getUid($room_id,$client_id);
                 $pirate_key = "m_pirate_{$room_id}"; // 海盗
                 $pirateInfo = unserialize(self::$rd->get($pirate_key));
+
+                $turn = $room_status['turn'];
+                $my_turn = array_search($uid, $turn);   
+                $userInfo = array(
+                    'uid'=>$uid,
+                    'turn'=>$my_turn,
+                    'color'=>self::$gameConf['color'][$my_turn],
+                );
 
                 $pirateId = null;
                 for($i=0;$i<=1;$i++){
@@ -1335,42 +1349,199 @@ class Events
                     }
                 }
 
-                if($pirateInfo == null){
+                if($pirateId == null){
                     return;
                 }else{
 
-                    if($round == 3){ // 上船
-                        $goodsId = $shipInfo['goods_id'];
-                        $shipCells = $shipInfo['cells'];
-                        $goodConf = self::$gameConf['goods'];
-                        $cellsNum = count($goodConf[$goodsId]['cells']);
-                        $shipWorker = count($shipCells);
+                    if($giveUp){ // 放弃登船
+                        $pirateInfo[$pirateId]['round'][$round] = 1; 
+                        self::$rd->set($pirate_key,serialize($pirateInfo));
 
-                        if($shipWorker >= $cellsNum){ // 船满员
-                            return; 
-                        }
-
-                        if(empty($shipCells)){
-                            $shipInfo['cells'][1] = $uid;
+                        $nextPirate = $pirateId + 1;
+                        if(isset($pirateInfo[$nextPirate])){
+                            $nextUid = $pirateInfo[$nextPirate]['uid'];
+                            $next = array_search($nextUid, $turn);
+                            $pirate = 1;
                         }else{
-                            $shipInfo['cells'][] = $uid;
+                            $next = $room_status['now'];
+                            $pirate = 0;
                         }
 
-                        $pirateInfo[$pirateId]['status'] = 1; 
-                        self::$rd->set($pirate_key,serialize($pirateInfo));
-                        self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
-                    }elseif($round == 4){ // 劫船
+                        $new_message = array(
+                            'type'=>'pirateBoarding',
+                            'action'=>'giveup',
+                            'next'=>$next,
+                            'pirate'=>$pirate,
+                        );
+                    }else{ // 登船
+                        $otherShip = false;
+                        $allShip = $rd->hgetall($ship_key);
+                        foreach($allShip as $k=>$v){
+                           $ship = unserialize($v);
+                           if($ship['step'] == 13 && $k != $shipId){
+                                $otherShip = true;
+                                break;
+                           }
+                        }
 
-                        unset($shipInfo['cells']);
-                        $shipInfo['cells'][1] = $uid;
-                        $shipInfo['status'] = 3;
+                        if($otherShip){
+                            $nextPirate = $pirateId + 1;
+                            if(isset($pirateInfo[$nextPirate])){
+                                $nextUid = $pirateInfo[$nextPirate]['uid'];
+                                $next = array_search($nextUid, $turn);
+                                $pirate = 1;
+                            }else{
+                                $next = $room_status['now'];
+                                $pirate = 0;
+                            }
+                        }else{
+                            $next = $room_status['now'];
+                            $pirate = 0;
+                        }
 
-                        $pirateInfo[$pirateId]['status'] = 1; 
-                        self::$rd->set($pirate_key,serialize($pirateInfo));
-                        self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+
+                        if($round == 3){ // 上船
+                            $goodsId = $shipInfo['goods_id'];
+                            $shipCells = $shipInfo['cells'];
+                            $goodConf = self::$gameConf['goods'];
+                            $cellsNum = count($goodConf[$goodsId]['cells']);
+                            $shipWorker = count($shipCells);
+
+                            if($shipWorker >= $cellsNum){ // 船满员
+                                return; 
+                            }
+
+                            if(empty($shipCells)){
+                                $shipInfo['cells'][1] = $uid;
+                            }else{
+                                $shipInfo['cells'][] = $uid;
+                            }
+
+                            $cell = count($shipInfo['cells']);
+                            $pirateInfo[$pirateId]['status'] = 1; 
+                            self::$rd->set($pirate_key,serialize($pirateInfo));
+                            self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+
+                            $new_message = array(
+                                'type'=>'pirateBoarding',
+                                'action'=>'boarding',
+                                'user_info'=>$userInfo,
+                                'cell'=>$cell,
+                                'next'=>$next,
+                                'pirate'=>$pirate,
+                            );
+
+                        }elseif($round == 4){ // 劫船
+
+                            unset($shipInfo['cells']);
+                            $shipInfo['cells'][1] = $uid;
+                            $shipInfo['pirate'] = $uid;
+
+                            $pirateInfo[$pirateId]['status'] = 1; 
+                            self::$rd->set($pirate_key,serialize($pirateInfo));
+                            self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+
+                            $new_message = array(
+                                'type'=>'pirateBoarding',
+                                'action'=>'robbery',
+                                'user_info'=>$userInfo,
+                                'next'=>$next,
+                                'pirate'=>$pirate,
+                            );
+
+                        }
 
                     }
+
                 }
+
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
+            // 海盗选择进港或去修理厂
+            case 'pirateChoose':
+                if(!isset($_SESSION['room_id']))
+                {
+                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                if(isset($message_data['ship_id'])){
+                    $shipId = $message_data['ship_id'];
+                }else{
+                    return;
+                }
+
+                if(isset($message_data['action'])){
+                    $action = $message_data['action'];
+                }else{
+                    return;
+                }
+
+                $room_status_key = "m_room_status_{$room_id}";//房间状态
+                $room_status = unserialize(self::$rd->get($room_status_key));
+
+                $room_step = 0;
+                if(isset($room_status['step'])){
+                    $room_step = $room_status['step'];
+                }
+                if($room_step != 4){
+                    return;
+                }
+                $round = $room_status['round']; 
+                if($round != 4){
+                    return;
+                }
+
+                $ship_key = "m_ship_{$room_id}"; //轮船
+                $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
+                if(!isset($shipInfo['pirate'])){ // 轮船没有被劫持
+                    return;
+                }
+
+                $uid = self::getUid($room_id,$client_id);
+                if($shipInfo['pirate'] != $uid){ // 不是海盗
+                    return;
+                }
+
+                if($action == 1){ // 进港
+                    $shipInfo['status'] = 1;
+                }elseif($action == 2){ // 进修理厂
+                    $shipInfo['status'] = 2;
+                }
+                self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
+
+                $otherShip = false;
+                $allShip = $rd->hgetall($ship_key);
+                foreach($allShip as $k=>$v){
+                   $ship = unserialize($v);
+                   if($ship['step'] == 13 && $k != $shipId){
+                        $otherShip = true;
+                        break;
+                   }
+                }
+
+                if($otherShip){
+                    $nextPirate = $pirateId + 1;
+                    if(isset($pirateInfo[$nextPirate])){
+                        $nextUid = $pirateInfo[$nextPirate]['uid'];
+                        $next = array_search($nextUid, $turn);
+                        $pirate = 1;
+                    }else{
+                        $next = $room_status['now'];
+                        $pirate = 0;
+                    }
+                }else{
+                    $next = $room_status['now'];
+                    $pirate = 0;
+                }
+
+                $new_message = array(
+                    'type'=>'pirateChoose',
+                    'action'=>$action,
+                    'next'=>$next,
+                    'pirate'=>$pirate,
+
+                );
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
             //发言

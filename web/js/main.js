@@ -307,7 +307,7 @@ function initShipOutset(){
 		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
 		j++;
 	}
-	$('.confirm').css('display','block');
+	$('#confirm').css('display','block');
 }
 // 结束轮船起点设置
 function endShipOutset(){
@@ -329,7 +329,7 @@ function endShipOutset(){
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
 		j++;
 	}
-	$('.confirm').css('display','none');
+	$('#confirm').css('display','none');
 }
 
 
@@ -481,6 +481,33 @@ function initGame(){
 	document.querySelectorAll('#box > div')[4].setAttribute("onclick","pilot(2)");
 
 }
+// 
+function endGameChoose(){
+	/* 登船 */
+	document.getElementById('ship1').removeAttribute("onclick");
+	document.getElementById('ship2').removeAttribute("onclick");
+	document.getElementById('ship3').removeAttribute("onclick");
+
+	/* 保险 */
+	document.querySelectorAll('#box > div')[92].removeAttribute("onclick");
+
+	/* 港口 */
+	document.querySelectorAll('#box > div')[17].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[18].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[19].removeAttribute("onclick");
+	/* 修理厂 */
+	document.querySelectorAll('#box > div')[89].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[88].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[87].removeAttribute("onclick");
+
+	/* 海盗 */
+	document.querySelectorAll('#box > div')[6].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[16].removeAttribute("onclick");
+
+	/* 领航员 */
+	document.querySelectorAll('#box > div')[3].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[4].removeAttribute("onclick");
+}
 
 // 工人上船
 function boarding(shipId){
@@ -610,7 +637,39 @@ function getServerPoint(){
 	ws.send('{"type":"playPoint","num":"3"}');
 }
 
+// 海盗登船
+function pirateBoarding(flag,shipId){
+	if(flag == 1){
+		ws.send('{"type":"pirateBoarding","ship_id":"'+ shipId +'"}');
+	}else if(flag == 2){
+		ws.send('{"type":"pirateBoarding","action":"give_up"}');
+	}
+}
 
+function startPirateBoarding(){
+
+	document.getElementById('ship1').setAttribute("onclick","pirateBoarding(1,1)");
+	document.getElementById('ship2').setAttribute("onclick","pirateBoarding(1,2)");
+	document.getElementById('ship3').setAttribute("onclick","pirateBoarding(1,3)");
+	$("#pirateGiveUp").css('display','block');
+}
+
+function endPirateBoarding(){
+
+	document.getElementById('ship1').removeAttribute("onclick");
+	document.getElementById('ship2').removeAttribute("onclick");
+	document.getElementById('ship3').removeAttribute("onclick");
+	$("#pirateGiveUp").css('display','none');
+}
+
+function startPirateChoose(){
+
+}
+// 提示消息
+function showMsg(msg){
+
+	document.getElementById('msg').innerHTML = '<p>'+ msg +'</p>';
+}
 
 function test(){
 	//document.querySelectorAll('#list > div')[20].onclick = click();
