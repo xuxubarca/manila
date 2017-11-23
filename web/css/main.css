@@ -223,6 +223,20 @@
 	display: none;
 }
 
+.gotoPort {
+	position:absolute;
+	margin-top:12px;
+	margin-left:992px;
+	display: none;
+}
+
+.gotoRepair {
+	position:absolute;
+	margin-top:550px;
+	margin-left:985px;
+	display: none;
+}
+
 .msg {
 	text-align:center;
 	position:absolute;

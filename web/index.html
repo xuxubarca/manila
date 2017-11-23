@@ -164,13 +164,10 @@
 			shipStep[3]= 0;
 			var portShips = 0;
 			var repairShips = 0;
+			var nowShip = 0;
 			var manila = {
 				// 父容器
 				box: null,//document.getElementById('box'),
-
-				// 时间间隔、定时器
-				step: 500,
-				timer: null,
 				// 游戏面板，数组 对应 div
 				board: null,
 				boardDiv: null,
@@ -232,6 +229,8 @@
 					}
 					str += 	'<div class="confirm" id="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
 					str += 	'<div class="confirm" id="pirateGiveUp"><a class="btn btn-primary" href="javascript:pirateGiveUp(2);">放弃登船</a></div>';
+					str += 	'<div class="gotoPort" id="gotoPort"><a class="btn btn-primary" href="javascript:pirateChoose(1);">进港</a></div>';
+					str += 	'<div class="gotoRepair" id="gotoRepair"><a class="btn btn-primary" href="javascript:pirateChoose(2);">进修理厂</a></div>';
 					str += 	'<div class="msg" id="msg"></div>';
 				// str += '<div class="ship" id="ship1">';
 				// for (var j = 0; j < 4; j++) {
@@ -489,14 +488,17 @@
 						break;
 					// 海盗登船
 					case 'pirateBoarding':
-
+						console.log('------000------');
 						if(data['user_info']['uid'] == uid){
+							console.log('------222------');
 							endPirateBoarding();
 						}
-
+						showPirateBoarding(data);
 						if(data['action'] == 'robbery'){
 							if(data['user_info']['uid'] == uid){
-
+								console.log('------333------');
+								nowShip = data['ship_id'];
+								startPirateChoose();
 							}else{
 
 							}
@@ -512,9 +514,21 @@
 						break;
 					// 海盗选择轮船是否进港
 					case 'pirateChoose':
-						if(data['user_info'] == uid){
-							endPirateBoarding();
+						endPirateChoose();
+						if(data['action'] == 1){ // 进港
+							shipMovePoint(data['ship_id'],1);
+						}else if(data['action'] == 2){ // 进修理厂
+							shipMoveIntoRepair(data['ship_id']);
 						}
+
+						nowTurn(data['next']);
+
+						if(data['pirate'] == 1){
+							if(my_turn == data['next']){
+								startPirateBoarding();
+							}
+						}
+
 
 						break;
 					// 用户退出 更新用户列表

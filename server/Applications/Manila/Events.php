@@ -841,6 +841,14 @@ class Events
                     return;
                 }
 
+                if($room_status['play'] == 1){ // 掷骰子的时间
+                    return;
+                }
+
+                if(isset($room_status['pirate'])){ // 海盗回合
+                    return;
+                }
+
                 // 回合错误
                 if(isset($room_status['round']) && $room_status['round']>3){
                     return;
@@ -924,6 +932,7 @@ class Events
                             'user_info'=>$userInfo,
                             'next'=>$next,
                             'ship_id'=>$shipId,
+                            'goods_id'=>$goodsId,
                         ); 
 
                     }else{
@@ -1211,7 +1220,9 @@ class Events
                     return;
                 }
                 
-
+                $pointArr[1] = 3;
+                $pointArr[2] = 3;
+                $pointArr[3] = 1;
                 $pirateRound = 0; // 是否是海盗回合
                 $ship_key = "m_ship_{$room_id}"; //轮船
                 for($i=1;$i<=$num;$i++){
@@ -1230,7 +1241,7 @@ class Events
 
                     self::$rd->hset($ship_key,$i,serialize($shipInfo));
                 }
-                $pirateInfo = array();
+                $pirate = array();
                 if($pirateRound){
                     $pirate_key = "m_pirate_{$room_id}"; // 海盗
                     $pirateInfo = unserialize(self::$rd->get($pirate_key));
@@ -1238,50 +1249,24 @@ class Events
                         $turn = $room_status['turn'];
                         $pirateUid = $pirateInfo[0]['uid'];
                         $pirateTurn = array_search($captain, $turn);
-                        $room_status['pirate'] = 0; // 海盗回合
+                        $room_status['pirate'] = 1; // 海盗回合
 
-                        $pirateInfo['uid'] = $pirateUid;
-                        $pirateInfo['turn'] = $pirateTurn;
+                        $pirate['uid'] = $pirateUid;
+                        $pirate['turn'] = $pirateTurn;
                     }
                 }
-                
+                $room_status['play'] = 0;
                 $room_status['round'] += 1; // 回合
                 self::$rd -> set($room_status_key,serialize($room_status));
                 $new_message = array(
                     'type'=>'playPoint',
                     'point'=>$pointArr, 
                 );
-                if(!empty($pirateInfo)){
-                    $new_message['pirate'] = $pirateInfo;
+                if(!empty($pirate)){
+                    $new_message['pirate'] = $pirate;
                 }
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
-             // 掷骰子
-            case 'playPointTest':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
-                }
-                $room_id = $_SESSION['room_id'];
-                $client_name = $_SESSION['client_name'];
-
-                $num = $message_data['num'];
-                if($num >0){
-                    $pointArr = array();
-                    for($i=1;$i<=$num;$i++){
-                        $rand = mt_rand(1,6);
-                        $pointArr[$i] = $rand;
-                    }
-
-                }else{
-                    return;
-                }
-                //unset($pointArr[1]);
-                $new_message = array(
-                    'type'=>'playPoint',
-                    'point'=>$pointArr, 
-                );
-                return Gateway::sendToGroup($room_id ,json_encode($new_message));
             // 海盗登船
             case 'pirateBoarding':
 
@@ -1312,6 +1297,10 @@ class Events
                     return;
                 }
 
+                if($room_status['play'] == 1){ // 掷骰子的时间
+                    return;
+                }
+
                 $round = $room_status['round']; 
                 if($round<3 || $round>4){
                     return;
@@ -1321,6 +1310,7 @@ class Events
                     $ship_key = "m_ship_{$room_id}"; //轮船
                     $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
                     if($shipInfo['step'] != 13){
+                        file_put_contents("/mylog.log","---------222---------\r\n",FILE_APPEND);
                         return;
                     }
                 }
@@ -1342,14 +1332,17 @@ class Events
                     if($pirateInfo[$i]['status'] != 1 && !isset($pirateInfo[$i]['round'][$round])){
                         $pirateUid = $pirateInfo[$i]['uid'];
                         if($pirateUid != $uid){
+                            file_put_contents("/mylog.log",$pirateUid.'==='.$uid."---------000---------\r\n",FILE_APPEND);
                             return;
                         }
                         $pirateId = $i;
+                        file_put_contents("/mylog.log","---------666---------\r\n",FILE_APPEND);
                         break;
                     }
                 }
 
-                if($pirateId == null){
+                if($pirateId === null){
+                    file_put_contents("/mylog.log","---------111---------\r\n",FILE_APPEND);
                     return;
                 }else{
 
@@ -1375,7 +1368,7 @@ class Events
                         );
                     }else{ // 登船
                         $otherShip = false;
-                        $allShip = $rd->hgetall($ship_key);
+                        $allShip = self::$rd->hgetall($ship_key);
                         foreach($allShip as $k=>$v){
                            $ship = unserialize($v);
                            if($ship['step'] == 13 && $k != $shipId){
@@ -1386,22 +1379,27 @@ class Events
 
                         if($otherShip){
                             $nextPirate = $pirateId + 1;
+                            //file_put_contents("/mylog.log",$nextPirate."===111===\r\n",FILE_APPEND);
                             if(isset($pirateInfo[$nextPirate])){
                                 $nextUid = $pirateInfo[$nextPirate]['uid'];
                                 $next = array_search($nextUid, $turn);
                                 $pirate = 1;
+                                //$room_status['pirate'] = 1;// 海盗回合
                             }else{
                                 $next = $room_status['now'];
                                 $pirate = 0;
+                                unset($room_status['pirate']);
                             }
                         }else{
+                            //file_put_contents("/mylog.log","===222===\r\n",FILE_APPEND);
                             $next = $room_status['now'];
                             $pirate = 0;
+                            unset($room_status['pirate']);
                         }
 
-
+                        self::$rd->set($room_status_key,serialize($room_status));
+                        $goodsId = $shipInfo['goods_id'];
                         if($round == 3){ // 上船
-                            $goodsId = $shipInfo['goods_id'];
                             $shipCells = $shipInfo['cells'];
                             $goodConf = self::$gameConf['goods'];
                             $cellsNum = count($goodConf[$goodsId]['cells']);
@@ -1425,10 +1423,12 @@ class Events
                             $new_message = array(
                                 'type'=>'pirateBoarding',
                                 'action'=>'boarding',
+                                'ship_id'=>$shipId,
                                 'user_info'=>$userInfo,
                                 'cell'=>$cell,
                                 'next'=>$next,
-                                'pirate'=>$pirate,
+                                'pirate'=>$pirate, // 下回合还是海盗回合
+                                'goods_id'=>$goodsId,
                             );
 
                         }elseif($round == 4){ // 劫船
@@ -1436,6 +1436,8 @@ class Events
                             unset($shipInfo['cells']);
                             $shipInfo['cells'][1] = $uid;
                             $shipInfo['pirate'] = $uid;
+                            $shipInfo['pirate_id'] = $pirateId;
+
 
                             $pirateInfo[$pirateId]['status'] = 1; 
                             self::$rd->set($pirate_key,serialize($pirateInfo));
@@ -1444,9 +1446,11 @@ class Events
                             $new_message = array(
                                 'type'=>'pirateBoarding',
                                 'action'=>'robbery',
+                                'ship_id'=>$shipId,
                                 'user_info'=>$userInfo,
                                 'next'=>$next,
                                 'pirate'=>$pirate,
+                                'goods_id'=>$goodsId,
                             );
 
                         }
@@ -1511,7 +1515,7 @@ class Events
                 self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
 
                 $otherShip = false;
-                $allShip = $rd->hgetall($ship_key);
+                $allShip = self::$rd->hgetall($ship_key);
                 foreach($allShip as $k=>$v){
                    $ship = unserialize($v);
                    if($ship['step'] == 13 && $k != $shipId){
@@ -1521,25 +1525,36 @@ class Events
                 }
 
                 if($otherShip){
+                    $pirate_key = "m_pirate_{$room_id}"; // 海盗
+                    $pirateInfo = unserialize(self::$rd->get($pirate_key));
+                    $pirateId = $shipInfo['pirate_id'];
                     $nextPirate = $pirateId + 1;
+                    file_put_contents("/mylog.log",$nextPirate.'---'.$pirateId."===111===\r\n",FILE_APPEND);
                     if(isset($pirateInfo[$nextPirate])){
                         $nextUid = $pirateInfo[$nextPirate]['uid'];
+                        $turn = $room_status['turn'];
                         $next = array_search($nextUid, $turn);
                         $pirate = 1;
+                        //$room_status['pirate'] += 1;// 海盗回合
                     }else{
+                        file_put_contents("/mylog.log","===333===\r\n",FILE_APPEND);
                         $next = $room_status['now'];
                         $pirate = 0;
+                        unset($room_status['pirate']);
                     }
                 }else{
+                    file_put_contents("/mylog.log","===222===\r\n",FILE_APPEND);
                     $next = $room_status['now'];
                     $pirate = 0;
+                    unset($room_status['pirate']);
                 }
-
+                self::$rd->set($room_status_key,serialize($room_status));
                 $new_message = array(
                     'type'=>'pirateChoose',
                     'action'=>$action,
                     'next'=>$next,
                     'pirate'=>$pirate,
+                    'ship_id'=>$shipId,
 
                 );
 

@@ -403,6 +403,17 @@ function shipMoveIntoPort(shipId){
 // 轮船进修理厂
 function shipMoveIntoRepair(shipId){
 
+	if(repairShips == 0){
+		step = 16;
+	}else if(repairShips == 1){
+		step = 18;
+	}else if(repairShips == 2){
+		step = 20;
+	}
+	var n = step * 60;
+	var p = n + 'px';
+	$("#ship"+shipId).animate({left:p},'slow');
+
 	$('#ship'+shipId).animate(
 		{borderSpacing:90},
 		{step: 
@@ -546,13 +557,78 @@ function showBoarding(data){
 	var next = data['next'];
 	var shipId = data['ship_id'];
 	var play = data['play'];
+	var goodsId = data['goods_id'];
 	nowTurn(next);
-	var n = 3 - cell;
+	if(goodsId == 3){
+		var n = 4 - cell;
+	}else{
+		var n = 3 - cell;
+	}
+	
 	document.querySelectorAll('#ship'+ shipId +' > div')[n].style.background = color;
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
 }
+
+   // 'type'=>'pirateBoarding',
+   //  'action'=>'boarding',
+   //  'ship_id'=>$shipId,
+   //  'user_info'=>$userInfo,
+   //  'cell'=>$cell,
+   //  'next'=>$next,
+   //  'pirate'=>$pirate,
+
+// 海盗登船展示
+function showPirateBoarding(data){
+	
+	var color = data['user_info']['color'];
+	var action = data['action'];
+	var next = data['next'];
+	var shipId = data['ship_id'];
+	var pirate = data['pirate'];
+	var goodsId = data['goods_id'];
+	nowTurn(next);
+	console.log(action);
+	console.log(next);
+	console.log(color);
+	console.log(shipId);
+	console.log(goodsId);
+	//console.log(action);
+	if(action == 'boarding'){
+		var cell = data['cell'];
+		if(goodsId == 3){
+			var n = 4 - cell;
+		}else{
+			var n = 3 - cell;
+		}
+		document.querySelectorAll('#ship'+ shipId +' > div')[n].style.background = color;
+		// if(captain==1 && pirate==0){
+		// 	startPlayPoint();
+		// }
+	}else if(action == 'robbery'){
+		var cell = 1;
+		if(goodsId == 3){
+			var n = 4 - cell;
+			var m = 4;
+		}else{
+			var n = 3 - cell;
+			var m = 3;
+		}
+
+		var shipColor = document.querySelectorAll('#ship'+ shipId +' > div')[m].style.backgroundColor;
+		
+		for(var i=0;i<n;i++){
+			document.querySelectorAll('#ship'+ shipId +' > div')[i].style.background = shipColor;
+		}
+
+		document.querySelectorAll('#ship'+ shipId +' > div')[n].style.background = color;
+	}
+	
+	
+
+}
+
 // 港口&修理厂展示
 function showPort(data){
 	var portId = data['port_id'];
@@ -574,13 +650,13 @@ function showPort(data){
 }
 
 // 领航员
-function showPirate(data){
-	var pirateId = data['pirate_id'];
+function showPilot(data){
+	var pilotId = data['pilot_id'];
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
 	nowTurn(next);
-	var n = 2 + pirateId;
+	var n = 2 + pilotId;
 	document.querySelectorAll('#box > div')[n].style.background = color;
 
 	if(captain==1 && play==1){
@@ -589,15 +665,15 @@ function showPirate(data){
 }
 
 // 海盗
-function showPilot(data){
-	var pilotId = data['pilot_id'];
+function showPirate(data){
+	var pirateId = data['pirate_id'];
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
 	nowTurn(next);
-	if(pilotId == 1){
+	if(pirateId == 1){
 		var n = 16;
-	}else if(pilotId == 2){
+	}else if(pirateId == 2){
 		var n = 6;
 	}
 	document.querySelectorAll('#box > div')[n].style.background = color;
@@ -607,7 +683,7 @@ function showPilot(data){
 	}
 }
 // 保险
-function showInsurance(){
+function showInsurance(data){
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
@@ -661,9 +737,23 @@ function endPirateBoarding(){
 	document.getElementById('ship3').removeAttribute("onclick");
 	$("#pirateGiveUp").css('display','none');
 }
+// 海盗选择轮船是否进港 
+function pirateChoose(action){
+	if(nowShip == 0){
+		console.log('------666------');
+		return;
+	}
+	ws.send('{"type":"pirateChoose","ship_id":"'+ nowShip +'","action":"'+ action +'"}');
+}
 
 function startPirateChoose(){
+	$("#gotoPort").css('display','block');
+	$("#gotoRepair").css('display','block');
+}
 
+function endPirateChoose(){
+	$("#gotoPort").css('display','none');
+	$("#gotoRepair").css('display','none');
 }
 // 提示消息
 function showMsg(msg){
