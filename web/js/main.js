@@ -740,7 +740,6 @@ function endPirateBoarding(){
 // 海盗选择轮船是否进港 
 function pirateChoose(action){
 	if(nowShip == 0){
-		console.log('------666------');
 		return;
 	}
 	ws.send('{"type":"pirateChoose","ship_id":"'+ nowShip +'","action":"'+ action +'"}');
@@ -759,6 +758,44 @@ function endPirateChoose(){
 function showMsg(msg){
 
 	document.getElementById('msg').innerHTML = '<p>'+ msg +'</p>';
+}
+
+function startPilotChoose(shipStep){
+	for(i=1;i<=3;i++){
+		n = 20 * i;
+		if(shipStep[i] > 0){
+			n = n + shipStep[i];
+		}
+		if(n>=2){
+			i = n - 2;
+		}else{
+			i = 0;
+		}
+		if(n<=11){
+			m = n + 2;
+		}
+		
+	}
+
+	j = 0;
+	for(var i = 20; i < 26; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(1,"+ j +")");
+		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
+		j++;
+	}
+	j = 0;
+	for(var i = 40; i < 46; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(2,"+ j +")");
+		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
+		j++;
+	}
+	j = 0;
+	for(var i = 60; i < 66; i++){
+		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(3,"+ j +")");
+		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
+		j++;
+	}
+
 }
 
 function test(){

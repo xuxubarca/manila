@@ -478,6 +478,7 @@
 						for(var i=1;i<=3;i++){
 							shipMovePoint(i,data['point'][i]);
 						}
+						endPlayPoint();
 						// 海盗回合
 						if(data['pirate']){
 							nowTurn(data['pirate']['turn']);
