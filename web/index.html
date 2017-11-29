@@ -489,15 +489,12 @@
 						break;
 					// 海盗登船
 					case 'pirateBoarding':
-						console.log('------000------');
 						if(data['user_info']['uid'] == uid){
-							console.log('------222------');
 							endPirateBoarding();
 						}
 						showPirateBoarding(data);
 						if(data['action'] == 'robbery'){
 							if(data['user_info']['uid'] == uid){
-								console.log('------333------');
 								nowShip = data['ship_id'];
 								startPirateChoose();
 							}else{
@@ -532,6 +529,17 @@
 
 
 						break;
+					// 领航员行动
+					case 'pilotChoose':
+
+						if(data['finish']){
+							var play = data['play'];
+							endPilotChoose(play);
+							nowTurn(data['next']);
+						}
+						shipMove(data['ship_id'],data['step']);
+
+						break;
 					// 用户退出 更新用户列表
 					case 'logout':
 						//say(data['from_client_id'], data['from_client_name'], data['from_client_name']+' 退出了', data['time']);
@@ -553,7 +561,7 @@
 		</div>
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
-		<input type="button" onclick="startPirateBoarding()" value="start1"> 
+		<input type="button" onclick="startPilotChoose()" value="start1"> 
 
 	</body>
 </html>

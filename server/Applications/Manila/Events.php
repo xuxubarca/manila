@@ -841,7 +841,7 @@ class Events
                     return;
                 }
 
-                if($room_status['play'] == 1){ // 掷骰子的时间
+                if(isset($room_status['play']) && $room_status['play'] == 1){ // 掷骰子的时间
                     return;
                 }
 
@@ -915,15 +915,32 @@ class Events
                         
                         $room_status['now'] = $next;
                         $play = 0;
-                        $pilot = 0;
+                        $pilot = array();
                         if($next == $captain_turn){ // 放置工人结束
 
                             if($room_status['round'] == 3){ // 最后一轮掷骰子之前  领航员活动
                                 $pilot_key = "m_pilot_{$room_id}"; // 领航员
                                 $pilotInfo = unserialize(self::$rd->get($pilot_key));
                                 if(!empty($pilotInfo)){
-                                    $room_status['pilot'] = 1; // 领航员回合
-                                    $pilot = 1;
+                                    // $room_status['pilot'] = 1; // 领航员回合
+                                    if(isset($pilotInfo[1])){
+                                        $pilotUid = $pilotInfo[1]['uid'];
+                                    }else{
+                                        if(isset($pilotInfo[2])){
+                                            $pilotUid = $pilotInfo[2]['uid'];
+                                        }else{
+                                            $room_status['play'] = 1; // 开始掷骰子
+                                            $play = 1;
+                                        }
+                                    }    
+                                    
+                                    if(!$play){
+                                        $pilotTurn = array_search($pilotUid, $turn);
+                                        $room_status['pilot'] = 1; // 领航员回合
+                                        $pilot['uid'] = $pilotUid;
+                                        $pilot['turn'] = $pilotTurn;
+                                    }
+                                   
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
                                     $play = 1;
@@ -996,15 +1013,31 @@ class Events
 
                         $room_status['now'] = $next;
                         $play = 0;
-                        $pilot = 0;
+                        $pilot = array();
                         if($next == $captain_turn){ // 放置工人结束
 
                             if($room_status['round'] == 3){ // 最后一轮掷骰子之前  领航员活动
                                 $pilot_key = "m_pilot_{$room_id}"; // 领航员
                                 $pilotInfo = unserialize(self::$rd->get($pilot_key));
                                 if(!empty($pilotInfo)){
-                                    $room_status['pilot'] = 1; // 领航员回合
-                                    $pilot = 1;
+                                    // $room_status['pilot'] = 1; // 领航员回合
+                                    if(isset($pilotInfo[1])){
+                                        $pilotUid = $pilotInfo[1]['uid'];
+                                    }else{
+                                        if(isset($pilotInfo[2])){
+                                            $pilotUid = $pilotInfo[2]['uid'];
+                                        }else{
+                                            $room_status['play'] = 1; // 开始掷骰子
+                                            $play = 1;
+                                        }
+                                    }    
+                                    
+                                    if(!$play){
+                                        $pilotTurn = array_search($pilotUid, $turn);
+                                        $room_status['pilot'] = 1; // 领航员回合
+                                        $pilot['uid'] = $pilotUid;
+                                        $pilot['turn'] = $pilotTurn;
+                                    }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
                                     $play = 1;
@@ -1076,15 +1109,30 @@ class Events
 
                         $room_status['now'] = $next;
                         $play = 0;
-                        $pilot = 0;
+                        $pilot = array();
                         if($next == $captain_turn){ // 放置工人结束
 
                             if($room_status['round'] == 3){ // 最后一轮掷骰子之前  领航员活动
                                 // $pilot_key = "m_pilot_{$room_id}"; // 领航员
                                 // $pilotInfo = unserialize(self::$rd->get($pilot_key));
                                 if(!empty($pilotInfo)){
-                                    $room_status['pilot'] = 1; // 领航员回合
-                                    $pilot = 1;
+                                    if(isset($pilotInfo[1])){
+                                        $pilotUid = $pilotInfo[1]['uid'];
+                                    }else{
+                                        if(isset($pilotInfo[2])){
+                                            $pilotUid = $pilotInfo[2]['uid'];
+                                        }else{
+                                            $room_status['play'] = 1; // 开始掷骰子
+                                            $play = 1;
+                                        }
+                                    }    
+                                    
+                                    if(!$play){
+                                        $pilotTurn = array_search($pilotUid, $turn);
+                                        $room_status['pilot'] = 1; // 领航员回合
+                                        $pilot['uid'] = $pilotUid;
+                                        $pilot['turn'] = $pilotTurn;
+                                    }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
                                     $play = 1;
@@ -1146,15 +1194,30 @@ class Events
 
                         $room_status['now'] = $next;
                         $play = 0;
-                        $pilot = 0;
+                        $pilot = array();
                         if($next == $captain_turn){ // 放置工人结束
 
                             if($room_status['round'] == 3){ // 最后一轮掷骰子之前  领航员活动
                                 $pilot_key = "m_pilot_{$room_id}"; // 领航员
                                 $pilotInfo = unserialize(self::$rd->get($pilot_key));
                                 if(!empty($pilotInfo)){
-                                    $room_status['pilot'] = 1; // 领航员回合
-                                    $pilot = 1;
+                                    if(isset($pilotInfo[1])){
+                                        $pilotUid = $pilotInfo[1]['uid'];
+                                    }else{
+                                        if(isset($pilotInfo[2])){
+                                            $pilotUid = $pilotInfo[2]['uid'];
+                                        }else{
+                                            $room_status['play'] = 1; // 开始掷骰子
+                                            $play = 1;
+                                        }
+                                    }    
+                                    
+                                    if(!$play){
+                                        $pilotTurn = array_search($pilotUid, $turn);
+                                        $room_status['pilot'] = 1; // 领航员回合
+                                        $pilot['uid'] = $pilotUid;
+                                        $pilot['turn'] = $pilotTurn;
+                                    }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
                                     $play = 1;
@@ -1244,6 +1307,7 @@ class Events
                 }
                 
                 if($pilot == 1){
+                    $ship_key = "m_ship_{$room_id}"; // 轮船
                     $allShip = self::$rd->hgetall($ship_key);
                     $shipStepArr = array();
                     foreach($allShip as $k=>$v){
@@ -1611,7 +1675,7 @@ class Events
                         break;
                    }
                 }
-
+                $turn = $room_status['turn'];
                 if($otherShip){
                     $pirate_key = "m_pirate_{$room_id}"; // 海盗
                     $pirateInfo = unserialize(self::$rd->get($pirate_key));
@@ -1706,6 +1770,13 @@ class Events
                     return;
                 }
 
+                if($giveUp){
+                    if($pilotInfo[$pilotId]['status'] == 2){
+                        return;
+                    }
+                }
+
+
                 $pilot_key = "m_pilot_{$room_id}"; // 领航员
                 $pilotInfo = unserialize(self::$rd->get($pilot_key));
 
@@ -1713,15 +1784,32 @@ class Events
                     if($pilotInfo[$pilotId]['status'] != 0){
                         return;
                     }
-                    $step = 1;
-
+                    $max_step = 1;
+                    $step = $max_step;
+                    $finish = 1;
                 }elseif($pilotId == 2){ // 大领航
                     if(isset($pilotInfo[$pilotId]['status']) && $pilotInfo[$pilotId]['status'] == 0){
                         return;
                     }
-                    $step = 2;
+                    $max_step = 2;
+                    if($pilotInfo[$pilotId]['status'] == 2){
+                        $step = 1;
+                        $finish = 1; 
+                    }else{
+                        if($step>=2){
+                            $step = 2;
+                            $finish = 1;
+                        }else{
+                            $finish = 0;
+                        }
+                    }
+
                 }
+
+
+
                 $uid = self::getUid($room_id,$client_id);
+                $turn = $room_status['turn'];
                 if($pilotInfo[$pilotId]['uid'] != $uid){
                     return;
                 }
@@ -1738,18 +1826,56 @@ class Events
                 }
 
                 self::$rd->hset($ship_key,$shipId,serialize($shipInfo));
-                /*
-                $pilotInfo[$pilotId]['uid'] = $uid;
-                $pilotInfo[$pilotId]['status'] = 0;
-                */
+                $pilot = 0;
+                $play = 0;
+                if($pilotId == 1){
+                    $haveShip = false;
+                    $allShip = self::$rd->hgetall($ship_key);
+                    foreach($allShip as $k=>$v){
+                       $ship = unserialize($v);
+                       if($shipInfo['status'] == 0){
+                            $haveShip = true;
+                            break;
+                       }
+                    }
 
+                    if($haveShip && isset($pilotInfo[2])){
+                        $pilot = 1;
+                        $nextUid = $pilotInfo[2]['uid'];
+                        $turn = $room_status['turn'];
+                        $next = array_search($nextUid, $turn);
+                    }else{
+                        $next = $room_status['now'];
+                        $play = 1;
+                        unset($room_status['pilot']);
+                        self::$rd->set($room_status_key,serialize($room_status));
+                    }
+
+                }else{
+                    if($finish){
+                        $next = $room_status['now'];
+                        $play = 1;
+                        unset($room_status['pilot']);
+                        self::$rd->set($room_status_key,serialize($room_status));
+                    }else{
+                        $pilot = 1;
+                        $next = array_search($uid, $turn);
+                        $pilotInfo[$pilotId]['status'] = 2;
+
+                        self::$rd->set($pilot_key,serialize($pilotInfo));
+                    }
+                }
+               
 
                 $new_message = array(
                     'type'=>'pilotChoose',
                     'action'=>$action,
                     'next'=>$next,
-                    'pirate'=>$pirate,
+                    'pilot'=>$pilot,
                     'ship_id'=>$shipId,
+                    'step'=>$shipInfo['step'],
+                    'finish'=>$finish,
+                    'play'=>$play,
 
                 );
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));

@@ -311,23 +311,17 @@ function initShipOutset(){
 }
 // 结束轮船起点设置
 function endShipOutset(){
-	j = 0;
 	for(var i = 20; i < 26; i++){
 		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
-		j++;
 	}
-	j = 0;
 	for(var i = 40; i < 46; i++){
 		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
-		j++;
 	}
-	j = 0;
 	for(var i = 60; i < 66; i++){
 		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
-		j++;
 	}
 	$('#confirm').css('display','none');
 }
@@ -569,15 +563,13 @@ function showBoarding(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
+	if(data['pilot']){
+		if(my_turn == data['pilot']['turn']){
+			startPilotChoose(data['ship_step']); 
+		}
+	}
 }
 
-   // 'type'=>'pirateBoarding',
-   //  'action'=>'boarding',
-   //  'ship_id'=>$shipId,
-   //  'user_info'=>$userInfo,
-   //  'cell'=>$cell,
-   //  'next'=>$next,
-   //  'pirate'=>$pirate,
 
 // 海盗登船展示
 function showPirateBoarding(data){
@@ -647,6 +639,11 @@ function showPort(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
+	if(data['pilot']){
+		if(my_turn == data['pilot']['turn']){
+			startPilotChoose(data['ship_step']); 
+		}
+	}
 }
 
 // 领航员
@@ -656,11 +653,16 @@ function showPilot(data){
 	var next = data['next'];
 	var play = data['play'];
 	nowTurn(next);
-	var n = 2 + pilotId;
+	var n = 2 + parseInt(pilotId);
 	document.querySelectorAll('#box > div')[n].style.background = color;
 
 	if(captain==1 && play==1){
 		startPlayPoint();
+	}
+	if(data['pilot']){
+		if(my_turn == data['pilot']['turn']){
+			startPilotChoose(data['ship_step']); 
+		} 
 	}
 }
 
@@ -681,6 +683,11 @@ function showPirate(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
+	if(data['pilot']){
+		if(my_turn == data['pilot']['turn']){
+			startPilotChoose(data['ship_step']); 
+		} 
+	}
 }
 // 保险
 function showInsurance(data){
@@ -692,6 +699,11 @@ function showInsurance(data){
 
 	if(captain==1 && play==1){
 		startPlayPoint();
+	}
+	if(data['pilot']){
+		if(my_turn == data['pilot']['turn']){
+			startPilotChoose(data['ship_step']); 
+		}
 	}
 }
 // 开始掷骰子
@@ -760,43 +772,69 @@ function showMsg(msg){
 	document.getElementById('msg').innerHTML = '<p>'+ msg +'</p>';
 }
 
-function startPilotChoose(shipStep){
-	for(i=1;i<=3;i++){
+function startPilotChoose(){
+
+	// var shipStep=new Array()
+	// shipStep[1]=9;
+	// shipStep[2]=9;
+	// shipStep[3]=5;
+	var n = 0;
+	var m = 0;
+	var j = 0;
+	for(var i=1;i<=3;i++){
+
+		if(shipStep[i] > 13){
+			continue;
+		}
+
 		n = 20 * i;
 		if(shipStep[i] > 0){
 			n = n + shipStep[i];
 		}
-		if(n>=2){
-			i = n - 2;
+		if(shipStep[i]>=2){
+			j = n - 2;
 		}else{
-			i = 0;
+			j = 0;
 		}
-		if(n<=11){
+		if(shipStep[i]<=12){
 			m = n + 2;
+		}else{
+			m = 14;
 		}
-		
-	}
-
-	j = 0;
-	for(var i = 20; i < 26; i++){
-		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(1,"+ j +")");
-		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
-		j++;
-	}
-	j = 0;
-	for(var i = 40; i < 46; i++){
-		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(2,"+ j +")");
-		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
-		j++;
-	}
-	j = 0;
-	for(var i = 60; i < 66; i++){
-		document.querySelectorAll('#box > div')[i].setAttribute("onclick","setShipOutset(3,"+ j +")");
-		document.querySelectorAll('#box > div')[i].style.background = '#9D9D9D';
-		j++;
+		for(j=j;j<=m;j++){
+			var x = j - n;
+			document.querySelectorAll('#box > div')[j].setAttribute("onclick","pilotChoose("+ i +","+ x +")");
+			document.querySelectorAll('#box > div')[j].style.background = '#9D9D9D';
+		}
 	}
 
 }
+
+function endPilotChoose(play){
+
+	for(var i = 20; i < 34; i++){
+		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
+		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
+	}
+	for(var i = 40; i < 54; i++){
+		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
+		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
+	}
+	for(var i = 60; i < 74; i++){
+		document.querySelectorAll('#box > div')[i].removeAttribute("onclick");
+		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
+	}
+
+	if(captain==1 && play==1){
+		startPlayPoint();
+	}
+
+}
+
+function pilotChoose(shipId,step){
+	ws.send('{"type":"pilotChoose","ship_id":"'+ shipId +'","step":"'+ step +'"}');
+}
+
 
 function test(){
 	//document.querySelectorAll('#list > div')[20].onclick = click();
