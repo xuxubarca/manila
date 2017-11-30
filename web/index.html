@@ -532,12 +532,18 @@
 					// 领航员行动
 					case 'pilotChoose':
 
+						shipMove(data['ship_id'],data['step']);
+						
 						if(data['finish']){
 							var play = data['play'];
 							endPilotChoose(play);
 							nowTurn(data['next']);
+							if(data['pilot'] == 1 && my_turn == data['next']){
+								startPilotChoose(2);
+							}
 						}
-						shipMove(data['ship_id'],data['step']);
+						
+
 
 						break;
 					// 用户退出 更新用户列表

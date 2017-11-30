@@ -552,7 +552,7 @@ function showBoarding(data){
 	var shipId = data['ship_id'];
 	var play = data['play'];
 	var goodsId = data['goods_id'];
-	nowTurn(next);
+
 	if(goodsId == 3){
 		var n = 4 - cell;
 	}else{
@@ -563,10 +563,13 @@ function showBoarding(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']){
+	if(data['pilot']['turn']){
 		if(my_turn == data['pilot']['turn']){
-			startPilotChoose(data['ship_step']); 
+			startPilotChoose(data['pilot']['id']); 
 		}
+		nowTurn(data['pilot']['turn']);
+	}else{
+		nowTurn(next);
 	}
 }
 
@@ -627,11 +630,11 @@ function showPort(data){
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
-	nowTurn(next);
+	
 	if(portId<=3){
-		var n = 16 + portId;
+		var n = 16 + parseInt(portId);
 	}else{
-		var n = 93 - portId;
+		var n = 93 - parseInt(portId);
 	}
 	
 	document.querySelectorAll('#box > div')[n].style.background = color;
@@ -639,10 +642,13 @@ function showPort(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']){
+	if(data['pilot']['turn']){
 		if(my_turn == data['pilot']['turn']){
-			startPilotChoose(data['ship_step']); 
+			startPilotChoose(data['pilot']['id']); 
 		}
+		nowTurn(data['pilot']['turn']);
+	}else{
+		nowTurn(next);
 	}
 }
 
@@ -652,17 +658,20 @@ function showPilot(data){
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
-	nowTurn(next);
+	
 	var n = 2 + parseInt(pilotId);
 	document.querySelectorAll('#box > div')[n].style.background = color;
 
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']){
+	if(data['pilot']['turn']){
 		if(my_turn == data['pilot']['turn']){
-			startPilotChoose(data['ship_step']); 
+			startPilotChoose(data['pilot']['id']); 
 		} 
+		nowTurn(data['pilot']['turn']);
+	}else{
+		nowTurn(next);
 	}
 }
 
@@ -672,7 +681,6 @@ function showPirate(data){
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
-	nowTurn(next);
 	if(pirateId == 1){
 		var n = 16;
 	}else if(pirateId == 2){
@@ -683,10 +691,13 @@ function showPirate(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']){
+	if(data['pilot']['turn']){
 		if(my_turn == data['pilot']['turn']){
-			startPilotChoose(data['ship_step']); 
-		} 
+			startPilotChoose(data['pilot']['id']); 
+		}
+		nowTurn(data['pilot']['turn']);
+	}else{
+		nowTurn(next);
 	}
 }
 // 保险
@@ -694,16 +705,19 @@ function showInsurance(data){
 	var color = data['user_info']['color'];
 	var next = data['next'];
 	var play = data['play'];
-	nowTurn(next);
+	
 	document.querySelectorAll('#box > div')[92].style.background = color;
 
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']){
+	if(data['pilot']['turn']){
 		if(my_turn == data['pilot']['turn']){
-			startPilotChoose(data['ship_step']); 
+			startPilotChoose(data['pilot']['id']); 
 		}
+		nowTurn(data['pilot']['turn']);
+	}else{
+		nowTurn(next);
 	}
 }
 // 开始掷骰子
@@ -772,15 +786,18 @@ function showMsg(msg){
 	document.getElementById('msg').innerHTML = '<p>'+ msg +'</p>';
 }
 
-function startPilotChoose(){
+function startPilotChoose(pilotId){
 
-	// var shipStep=new Array()
-	// shipStep[1]=9;
-	// shipStep[2]=9;
-	// shipStep[3]=5;
 	var n = 0;
 	var m = 0;
 	var j = 0;
+
+	if(pilotId == 1){
+		var step = 1;
+	}else if(pilotId == 2){
+		var step = 2;
+	}
+
 	for(var i=1;i<=3;i++){
 
 		if(shipStep[i] > 13){
@@ -791,19 +808,19 @@ function startPilotChoose(){
 		if(shipStep[i] > 0){
 			n = n + shipStep[i];
 		}
-		if(shipStep[i]>=2){
-			j = n - 2;
+		if(shipStep[i] - step >=0){
+			j = n - step;
 		}else{
 			j = 0;
 		}
-		if(shipStep[i]<=12){
-			m = n + 2;
+		if(shipStep[i] + step <=14){
+			m = n + step;
 		}else{
 			m = 14;
 		}
 		for(j=j;j<=m;j++){
 			var x = j - n;
-			document.querySelectorAll('#box > div')[j].setAttribute("onclick","pilotChoose("+ i +","+ x +")");
+			document.querySelectorAll('#box > div')[j].setAttribute("onclick","pilotChoose("+ i +","+ x +","+ pilotId +")");
 			document.querySelectorAll('#box > div')[j].style.background = '#9D9D9D';
 		}
 	}
@@ -831,8 +848,8 @@ function endPilotChoose(play){
 
 }
 
-function pilotChoose(shipId,step){
-	ws.send('{"type":"pilotChoose","ship_id":"'+ shipId +'","step":"'+ step +'"}');
+function pilotChoose(shipId,step,pilotId){
+	ws.send('{"type":"pilotChoose","ship_id":"'+ shipId +'","step":"'+ step +'","pilot_id":"'+ pilotId +'"}');
 }
 
 

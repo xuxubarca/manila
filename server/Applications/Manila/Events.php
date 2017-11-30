@@ -525,7 +525,10 @@ class Events
 
                
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            // 队长购买股票
+
+
+            /* 队长购买股票 */
+
             case 'buystock':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -611,7 +614,9 @@ class Events
                     
                 }
 
-            // 选择货物
+
+            /*   选择货物   */
+
             case 'chooseGoods':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -677,7 +682,10 @@ class Events
 
                 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            // 设置轮船起点
+
+
+            /*  设置轮船起点 */
+
             case 'setOutset':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -731,18 +739,9 @@ class Events
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
-            /*
-                shipId =>array(
-                    'id'=>$shipId,
-                    'color'=>$colorId,
-                    'step'=>0, //0~13
-                    'cell'=>array(1=>$uid,2=>$uid...),
-                    'status'=>0,
-                )
 
-            */
+            /*  确认轮船起点  */
 
-            // 确认轮船起点
             case 'confirmOutset':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -819,7 +818,10 @@ class Events
                 ); 
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            // 安排工人
+
+
+            /*  安排工人  */
+
             case 'setWorker':
 
                 if(!isset($_SESSION['room_id']))
@@ -925,9 +927,11 @@ class Events
                                     // $room_status['pilot'] = 1; // 领航员回合
                                     if(isset($pilotInfo[1])){
                                         $pilotUid = $pilotInfo[1]['uid'];
+                                        $pilotId = 1;
                                     }else{
                                         if(isset($pilotInfo[2])){
                                             $pilotUid = $pilotInfo[2]['uid'];
+                                            $pilotId = 2;
                                         }else{
                                             $room_status['play'] = 1; // 开始掷骰子
                                             $play = 1;
@@ -939,6 +943,7 @@ class Events
                                         $room_status['pilot'] = 1; // 领航员回合
                                         $pilot['uid'] = $pilotUid;
                                         $pilot['turn'] = $pilotTurn;
+                                        $pilot['id'] = $pilotId;
                                     }
                                    
                                 }else{
@@ -1023,9 +1028,11 @@ class Events
                                     // $room_status['pilot'] = 1; // 领航员回合
                                     if(isset($pilotInfo[1])){
                                         $pilotUid = $pilotInfo[1]['uid'];
+                                        $pilotId = 1;
                                     }else{
                                         if(isset($pilotInfo[2])){
                                             $pilotUid = $pilotInfo[2]['uid'];
+                                            $pilotId = 2;
                                         }else{
                                             $room_status['play'] = 1; // 开始掷骰子
                                             $play = 1;
@@ -1037,6 +1044,7 @@ class Events
                                         $room_status['pilot'] = 1; // 领航员回合
                                         $pilot['uid'] = $pilotUid;
                                         $pilot['turn'] = $pilotTurn;
+                                        $pilot['id'] = $pilotId;
                                     }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
@@ -1118,9 +1126,11 @@ class Events
                                 if(!empty($pilotInfo)){
                                     if(isset($pilotInfo[1])){
                                         $pilotUid = $pilotInfo[1]['uid'];
+                                        $pilotId = 1;
                                     }else{
                                         if(isset($pilotInfo[2])){
                                             $pilotUid = $pilotInfo[2]['uid'];
+                                            $pilotId = 2;
                                         }else{
                                             $room_status['play'] = 1; // 开始掷骰子
                                             $play = 1;
@@ -1132,6 +1142,7 @@ class Events
                                         $room_status['pilot'] = 1; // 领航员回合
                                         $pilot['uid'] = $pilotUid;
                                         $pilot['turn'] = $pilotTurn;
+                                        $pilot['id'] = $pilotId;
                                     }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
@@ -1203,9 +1214,11 @@ class Events
                                 if(!empty($pilotInfo)){
                                     if(isset($pilotInfo[1])){
                                         $pilotUid = $pilotInfo[1]['uid'];
+                                        $pilotId = 1;
                                     }else{
                                         if(isset($pilotInfo[2])){
                                             $pilotUid = $pilotInfo[2]['uid'];
+                                            $pilotId = 2;
                                         }else{
                                             $room_status['play'] = 1; // 开始掷骰子
                                             $play = 1;
@@ -1217,6 +1230,7 @@ class Events
                                         $room_status['pilot'] = 1; // 领航员回合
                                         $pilot['uid'] = $pilotUid;
                                         $pilot['turn'] = $pilotTurn;
+                                        $pilot['id'] = $pilotId;
                                     }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
@@ -1254,14 +1268,7 @@ class Events
 
                     $price = self::$gameConf['insurance'];
                     $myGold = self::getMoney($uid,$room_id);
-                    if($myGold < $price){
-                        $new_message = array(
-                            'type'=>'boarding',
-                            'message'=>'no_money',
-                        );
-                        Gateway::sendToCurrentClient(json_encode($new_message));
-                        return;
-                    }
+
                     $res = self::addMoney($uid,$room_id,$price,1); // 加钱
 
                     if($res){
@@ -1270,15 +1277,33 @@ class Events
 
                         $room_status['now'] = $next;
                         $play = 0;
-                        $pilot = 0;
+                        $pilot = array();
                         if($next == $captain_turn){ // 放置工人结束
 
                             if($room_status['round'] == 3){ // 最后一轮掷骰子之前  领航员活动
                                 $pilot_key = "m_pilot_{$room_id}"; // 领航员
                                 $pilotInfo = unserialize(self::$rd->get($pilot_key));
                                 if(!empty($pilotInfo)){
-                                    $room_status['pilot'] = 1; // 领航员回合
-                                    $pilot = 1;
+                                    if(isset($pilotInfo[1])){
+                                        $pilotUid = $pilotInfo[1]['uid'];
+                                        $pilotId = 1;
+                                    }else{
+                                        if(isset($pilotInfo[2])){
+                                            $pilotUid = $pilotInfo[2]['uid'];
+                                            $pilotId = 2;
+                                        }else{
+                                            $room_status['play'] = 1; // 开始掷骰子
+                                            $play = 1;
+                                        }
+                                    }    
+                                    
+                                    if(!$play){
+                                        $pilotTurn = array_search($pilotUid, $turn);
+                                        $room_status['pilot'] = 1; // 领航员回合
+                                        $pilot['uid'] = $pilotUid;
+                                        $pilot['turn'] = $pilotTurn;
+                                        $pilot['id'] = $pilotId;
+                                    }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
                                     $play = 1;
@@ -1306,24 +1331,26 @@ class Events
                     }
                 }
                 
-                if($pilot == 1){
-                    $ship_key = "m_ship_{$room_id}"; // 轮船
-                    $allShip = self::$rd->hgetall($ship_key);
-                    $shipStepArr = array();
-                    foreach($allShip as $k=>$v){
-                        $v = unserialize($v);
-                        $shipStep = $v['step'];
-                        if($shipStep<=13){
-                            $shipStepArr[$k] = $shipStep;
-                        }
-                    }
-                    $new_message['ship_step'] = $shipStepArr;
-                }
+                // if($pilot == 1){
+                //     $ship_key = "m_ship_{$room_id}"; // 轮船
+                //     $allShip = self::$rd->hgetall($ship_key);
+                //     $shipStepArr = array();
+                //     foreach($allShip as $k=>$v){
+                //         $v = unserialize($v);
+                //         $shipStep = $v['step'];
+                //         if($shipStep<=13){
+                //             $shipStepArr[$k] = $shipStep;
+                //         }
+                //     }
+                //     $new_message['ship_step'] = $shipStepArr;
+                // }
 
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
-            // 掷骰子
+
+            /*  掷骰子  */
+
             case 'playPoint':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -1346,6 +1373,11 @@ class Events
                 if($room_status['round'] > 3){ // 三回合结束
                     return;
                 }
+                $last = 0;
+                if($room_status['round'] == 3){
+                    $last = 1; // 最后一次掷骰子
+                }
+
                 $captain = $room_status['captain'];
                 $uid = self::getUid($room_id,$client_id);
                 if($captain != $uid){
@@ -1418,10 +1450,16 @@ class Events
                 );
                 if(!empty($pirate)){
                     $new_message['pirate'] = $pirate;
+                }else{
+                    if($last){ // 本次航行结束
+
+                    }
                 }
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
-            // 海盗登船
+
+            /*  海盗登船  */
+
             case 'pirateBoarding':
 
                 if(!isset($_SESSION['room_id']))
@@ -1612,7 +1650,10 @@ class Events
                 }
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            // 海盗选择进港或去修理厂
+
+
+            /*   海盗选择进港或去修理厂  */
+
             case 'pirateChoose':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -1708,7 +1749,9 @@ class Events
                 );
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            // 领航员
+
+
+            /*  领航员  */
             case 'pilotChoose':
                 if(!isset($_SESSION['room_id']))
                 {
@@ -1730,11 +1773,15 @@ class Events
                 }
 
                 if(isset($message_data['step'])){
-                    $step = $message_data['step'];
+                    $step = abs($message_data['step']);
+                    $move = $message_data['step'];
+                    $sign = $step / $move;
                 }else{
                     return;
                 }
-
+                if($step == 0){
+                    return;
+                }
                 $giveUp = false;
                 if(isset($message_data['action']) && $message_data['action']=='give_up'){
                     $giveUp = true;
@@ -1747,11 +1794,11 @@ class Events
                 if(isset($room_status['step'])){
                     $room_step = $room_status['step'];
                 }
-                if(isset($room_status['step_type'])){
-                    $step_type = $room_status['step_type'];
-                }else{
-                    return;
-                }
+                // if(isset($room_status['step_type'])){
+                //     $step_type = $room_status['step_type'];
+                // }else{
+                //     return;
+                // }
 
                 if($room_step != 4){
                     return;
@@ -1788,7 +1835,10 @@ class Events
                     $step = $max_step;
                     $finish = 1;
                 }elseif($pilotId == 2){ // 大领航
-                    if(isset($pilotInfo[$pilotId]['status']) && $pilotInfo[$pilotId]['status'] == 0){
+                    if(isset($pilotInfo[$pilotId]['status']) && $pilotInfo[$pilotId]['status'] == 1){
+                        return;
+                    }
+                    if($pilotInfo[1]['status'] == 0){
                         return;
                     }
                     $max_step = 2;
@@ -1815,11 +1865,12 @@ class Events
                 }
                 $ship_key = "m_ship_{$room_id}"; //轮船
                 $shipInfo = unserialize(self::$rd->hget($ship_key,$shipId));
-                if($step_type == 1){
-                    $shipInfo['step'] += $step;
-                }elseif($step_type == 2){
-                    $shipInfo['step'] -= $step;
-                }
+                $shipInfo['step'] += $step * $sign;
+                // if($step_type == 1){
+                //     $shipInfo['step'] += $step;
+                // }elseif($step_type == 2){
+                //     $shipInfo['step'] -= $step;
+                // }
 
                 if($shipInfo['step'] > 13){ // 进港
                     $shipInfo['status'] = 1;
@@ -1847,25 +1898,31 @@ class Events
                     }else{
                         $next = $room_status['now'];
                         $play = 1;
+                        $room_status['play'] = 1;
                         unset($room_status['pilot']);
                         self::$rd->set($room_status_key,serialize($room_status));
                     }
+
+                    $pilotInfo[$pilotId]['status'] = 1;
 
                 }else{
                     if($finish){
                         $next = $room_status['now'];
                         $play = 1;
                         unset($room_status['pilot']);
+                        $room_status['play'] = 1;
                         self::$rd->set($room_status_key,serialize($room_status));
+
+                        $pilotInfo[$pilotId]['status'] = 1;
+                        self::$rd->set($pilot_key,serialize($pilotInfo));
                     }else{
                         $pilot = 1;
                         $next = array_search($uid, $turn);
                         $pilotInfo[$pilotId]['status'] = 2;
 
-                        self::$rd->set($pilot_key,serialize($pilotInfo));
                     }
                 }
-               
+               self::$rd->set($pilot_key,serialize($pilotInfo));
 
                 $new_message = array(
                     'type'=>'pilotChoose',
@@ -1915,7 +1972,7 @@ class Events
                 );
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
-                case 'test':
+            case 'test':
 
                 if(!isset($_SESSION['room_id']))
                 {
@@ -2165,6 +2222,65 @@ class Events
     }
     // 结算
     public function balance(){
+
+       $room_status_key = "m_room_status_{$room_id}";//房间状态
+       $ship_key = "m_ship_{$room_id}"; // 轮船
+       $port_key = "m_port_{$room_id}"; // 港口&修理厂
+      
+       $pirate_key = "m_pirate_{$room_id}"; // 海盗
+       $pilot_key = "m_pilot_{$room_id}"; // 领航员
+       $insurance_key = "m_insurance_{$room_id}"; // 保险
+
+
+        
+       $room_status = unserialize(self::$rd->get($room_status_key));
+       $turn = $room_status['turn'];
+       $userList = array();
+       foreach($turn as $k=>$v){
+           $userList[$v] = 0;
+       }
+
+       $allShip = self::$rd -> hgetall($ship_key);
+       $allShipInfo = array();
+       foreach($allShip as $k=>$v){
+           $allShipInfo[$k] = unserialize($v);
+       }
+       $pilotInfo = unserialize(self::$rd -> get($pilot_key));
+       $pirateInfo = unserialize(self::$rd -> get($pirate_key));
+       $portInfo = unserialize(self::$rd -> get($port_key));  
+       $insuranceInfo = unserialize(self::$rd -> get($insurance_key));
+
+       
+       $portShip = 0;
+       $repairShip = 0;
+       foreach($allShipInfo as $shipId=>$shipInfo){
+
+           $color = $shipInfo['color'];
+           $shipGold = self::$gameConf['goods'][$color]['gold'];
+           if($shipInfo['status'] == 1){
+                $portShip += 1;
+                if(isset($shipInfo['pirate_id'])){ // 被劫船只
+                    $pirateId = $shipInfo['pirate_id'];
+                    $userList[$pirateId] += $shipGold;
+                }else{
+                    $workers = count($shipInfo['cell']);
+                    if($workers > 0){
+                        $gold = $shipGold / $workers;
+                        foreach ($shipInfo['cell'] as $workerUid) {
+                            $userList[$workerUid] += $gold;
+                        }
+                    }
+                }
+           }else{
+                $repairShip += 1;
+                if(isset($shipInfo['pirate_id'])){ // 被劫船只
+                    $pirateId = $shipInfo['pirate_id'];
+                    $userList[$pirateId] += $shipGold;
+                }
+           }
+
+       }
+
 
     }
 
