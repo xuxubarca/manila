@@ -1452,7 +1452,8 @@ class Events
                     $new_message['pirate'] = $pirate;
                 }else{
                     if($last){ // 本次航行结束
-
+                        $balanceInfo = self::balance($room_id);
+                        $new_message['result'] = $balanceInfo;
                     }
                 }
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
@@ -1748,6 +1749,10 @@ class Events
 
                 );
 
+                if(!$pirate){
+                    $balanceInfo = self::balance($room_id);
+                    $new_message['result'] = $balanceInfo;
+                }
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
 
 
@@ -1838,7 +1843,7 @@ class Events
                     if(isset($pilotInfo[$pilotId]['status']) && $pilotInfo[$pilotId]['status'] == 1){
                         return;
                     }
-                    if($pilotInfo[1]['status'] == 0){
+                    if(isset($pilotInfo[1]['status']) && $pilotInfo[1]['status'] == 0){
                         return;
                     }
                     $max_step = 2;
@@ -2221,21 +2226,21 @@ class Events
         }
     }
     // 结算
-    public function balance(){
+    public static function balance($room_id){
 
        $room_status_key = "m_room_status_{$room_id}";//房间状态
        $ship_key = "m_ship_{$room_id}"; // 轮船
        $port_key = "m_port_{$room_id}"; // 港口&修理厂
       
-       $pirate_key = "m_pirate_{$room_id}"; // 海盗
-       $pilot_key = "m_pilot_{$room_id}"; // 领航员
+       // $pirate_key = "m_pirate_{$room_id}"; // 海盗
+       // $pilot_key = "m_pilot_{$room_id}"; // 领航员
        $insurance_key = "m_insurance_{$room_id}"; // 保险
 
 
         
        $room_status = unserialize(self::$rd->get($room_status_key));
        $turn = $room_status['turn'];
-       $userList = array();
+       $userList = array(); // 结算金钱
        foreach($turn as $k=>$v){
            $userList[$v] = 0;
        }
@@ -2245,19 +2250,23 @@ class Events
        foreach($allShip as $k=>$v){
            $allShipInfo[$k] = unserialize($v);
        }
-       $pilotInfo = unserialize(self::$rd -> get($pilot_key));
-       $pirateInfo = unserialize(self::$rd -> get($pirate_key));
+       // $pilotInfo = unserialize(self::$rd -> get($pilot_key));
+       // $pirateInfo = unserialize(self::$rd -> get($pirate_key));
        $portInfo = unserialize(self::$rd -> get($port_key));  
        $insuranceInfo = unserialize(self::$rd -> get($insurance_key));
 
        
        $portShip = 0;
        $repairShip = 0;
+       $portGoods = array(); // 到港货物
+       $shipInRoute = array();
+       //  轮船结算
        foreach($allShipInfo as $shipId=>$shipInfo){
 
            $color = $shipInfo['color'];
            $shipGold = self::$gameConf['goods'][$color]['gold'];
            if($shipInfo['status'] == 1){
+                $portGoods[] = $color;
                 $portShip += 1;
                 if(isset($shipInfo['pirate_id'])){ // 被劫船只
                     $pirateId = $shipInfo['pirate_id'];
@@ -2277,10 +2286,78 @@ class Events
                     $pirateId = $shipInfo['pirate_id'];
                     $userList[$pirateId] += $shipGold;
                 }
+
+                if($shipInfo['status'] == 0){
+                    $shipInRoute[] = $shipId;
+                }
            }
 
        }
 
+       // 港口 修理厂 结算
+       foreach($portInfo as $portId=>$portInfo){
+            $portUid = $portInfo['uid'];
+            $ships = self::$gameConf['port'][$portId]['ship'];
+            $gold = self::$gameConf['port'][$portId]['reward'];
+            if($portId <= 3){ // 港口
+                if($portShip >= $ships){
+                    $userList[$portUid] += $gold;
+                }
+            }else{ // 修理厂
+                if($repairShip >= $ships){
+                    $userList[$portUid] += $gold;
+                }
+            }
+
+       }
+
+       // 保险赔偿
+       if(!empty($insuranceInfo) && $repairShip > 0){
+            
+            $insuranceUid = $insuranceInfo[0];
+            for($i=4;$i<=$repairShip+3;$i++){
+                 $gold = self::$gameConf['port'][$i]['reward'];
+                 $userList[$insuranceUid] -= $gold;
+            }
+
+
+       }
+
+       // 发钱
+       foreach($userList as $uid=>$gold){
+            if($gold>0){
+                self::addMoney($uid,$room_id,abs($gold),1);
+            }elseif($gold<0){
+                self::addMoney($uid,$room_id,abs($gold),2);
+            }
+       }
+
+       $end = 0;
+       // 股价提升
+       if(!empty($portGoods)){
+            foreach($portGoods as $k=>$stockId){
+                $room_status['stock_list'][$stockId] += 1;
+                if($room_status['stock_list'][$stockId] >= 5){
+                    $end = 1;
+                }
+            }
+
+            self::$rd ->set($room_status_key,serialize($room_status));
+
+       }
+       
+       $balance['gold_list'] = $userList;
+       $balance['stock_list'] = $portGoods;
+       $balance['ship_route'] = $shipInRoute;
+       $balance['end'] = $end;
+
+       return $balance;
+
+    }
+
+
+    // 初始化 进入下回合
+    public static function initRound(){
 
     }
 

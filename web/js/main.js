@@ -398,11 +398,11 @@ function shipMoveIntoPort(shipId){
 function shipMoveIntoRepair(shipId){
 
 	if(repairShips == 0){
-		step = 16;
+		step = 20;
 	}else if(repairShips == 1){
 		step = 18;
 	}else if(repairShips == 2){
-		step = 20;
+		step = 16;
 	}
 	var n = step * 60;
 	var p = n + 'px';
@@ -850,6 +850,38 @@ function endPilotChoose(play){
 
 function pilotChoose(shipId,step,pilotId){
 	ws.send('{"type":"pilotChoose","ship_id":"'+ shipId +'","step":"'+ step +'","pilot_id":"'+ pilotId +'"}');
+}
+
+// 股票面板
+
+function stockPriceChange(stockList){
+
+	// var stockList = new Array();
+	// stockList[1] = 2;
+	// stockList[2] = 1;
+	// stockList[3] = 0;
+	// stockList[4] = 4;
+
+	for(var i=1;i<=4;i++){
+		var color = document.querySelectorAll('#list > div')[i+15].style.background;
+		if(stockList[i] == 1){
+			document.querySelectorAll('#list > div')[i+11].style.background = color;
+		}else if(stockList[i] == 2){
+			document.querySelectorAll('#list > div')[i+11].style.background = color;
+			document.querySelectorAll('#list > div')[i+7].style.background = color;
+		}else if(stockList[i] == 3){
+			document.querySelectorAll('#list > div')[i+11].style.background = color;
+			document.querySelectorAll('#list > div')[i+7].style.background = color;
+			document.querySelectorAll('#list > div')[i+3].style.background = color;
+		}else if(stockList[i] == 4){
+			document.querySelectorAll('#list > div')[i+11].style.background = color;
+			document.querySelectorAll('#list > div')[i+7].style.background = color;
+			document.querySelectorAll('#list > div')[i+3].style.background = color;
+			document.querySelectorAll('#list > div')[i-1].style.background = color;
+		}
+	}
+
+
 }
 
 

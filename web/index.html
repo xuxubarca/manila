@@ -392,7 +392,7 @@
 								if(data['next_info']['next'] == my_turn){
 									callCaptain(now_price);
 								}
-								if(!data['give_up']){
+								if(!data['give_up'] && parseInt(now_price)>0){
 									getCaptainMessage(now_price,data['highest']); // 显示最高报价
 								}
 								nowTurn(data['next_info']['next']);
@@ -486,6 +486,10 @@
 								startPirateBoarding();
 							}
 						}
+
+						if(data['result']){
+							stockPriceChange(data['result']['stock_list']);
+						}
 						break;
 					// 海盗登船
 					case 'pirateBoarding':
@@ -543,8 +547,6 @@
 							}
 						}
 						
-
-
 						break;
 					// 用户退出 更新用户列表
 					case 'logout':
@@ -567,7 +569,7 @@
 		</div>
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
-		<input type="button" onclick="startPilotChoose()" value="start1"> 
+		<input type="button" onclick="stockPriceChange()" value="start1"> 
 
 	</body>
 </html>
