@@ -851,6 +851,10 @@ class Events
                     return;
                 }
 
+                if(isset($room_status['pilot'])){ // 领航员回合
+                    return;
+                }
+
                 // 回合错误
                 if(isset($room_status['round']) && $room_status['round']>3){
                     return;
@@ -965,7 +969,7 @@ class Events
                             'type'=>'boarding', 
                             'cell'=>$n,
                             'play'=>$play,
-                            'pilot'=>$pilot,
+                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                             'ship_id'=>$shipId,
@@ -1064,7 +1068,7 @@ class Events
                         $new_message = array(
                             'type'=>'port', 
                             'play'=>$play,
-                            'pilot'=>$pilot,
+                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                             'port_id'=>$portId,
@@ -1164,7 +1168,7 @@ class Events
                         $new_message = array(
                             'type'=>'pilot', 
                             'play'=>$play,
-                            'pilot'=>$pilot,
+                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                             'pilot_id'=>$pilotId,
@@ -1250,7 +1254,7 @@ class Events
                         $new_message = array(
                             'type'=>'pirate', 
                             'play'=>$play,
-                            'pilot'=>$pilot,
+                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                             'pirate_id'=>$pirateId,
@@ -1322,7 +1326,7 @@ class Events
                         $new_message = array(
                             'type'=>'insurance', 
                             'play'=>$play,
-                            'pilot'=>$pilot,
+                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                         ); 
@@ -1331,19 +1335,9 @@ class Events
                     }
                 }
                 
-                // if($pilot == 1){
-                //     $ship_key = "m_ship_{$room_id}"; // 轮船
-                //     $allShip = self::$rd->hgetall($ship_key);
-                //     $shipStepArr = array();
-                //     foreach($allShip as $k=>$v){
-                //         $v = unserialize($v);
-                //         $shipStep = $v['step'];
-                //         if($shipStep<=13){
-                //             $shipStepArr[$k] = $shipStep;
-                //         }
-                //     }
-                //     $new_message['ship_step'] = $shipStepArr;
-                // }
+                if(!empty($pilot)){
+                    $new_message['pilot'] = $pilot;
+                }
 
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
@@ -1453,6 +1447,7 @@ class Events
                 }else{
                     if($last){ // 本次航行结束
                         $balanceInfo = self::balance($room_id);
+                        self::initRound($room_id); // 初始化
                         $new_message['result'] = $balanceInfo;
                     }
                 }
@@ -1751,6 +1746,7 @@ class Events
 
                 if(!$pirate){
                     $balanceInfo = self::balance($room_id);
+                    self::initRound($room_id); // 初始化
                     $new_message['result'] = $balanceInfo;
                 }
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
@@ -1931,7 +1927,7 @@ class Events
 
                 $new_message = array(
                     'type'=>'pilotChoose',
-                    'action'=>$action,
+                    // 'action'=>$action,
                     'next'=>$next,
                     'pilot'=>$pilot,
                     'ship_id'=>$shipId,
@@ -2244,7 +2240,7 @@ class Events
        foreach($turn as $k=>$v){
            $userList[$v] = 0;
        }
-
+       file_put_contents("/mylog.log",json_encode($userList)."------userList------\r\n\r\n",FILE_APPEND);
        $allShip = self::$rd -> hgetall($ship_key);
        $allShipInfo = array();
        foreach($allShip as $k=>$v){
@@ -2252,7 +2248,7 @@ class Events
        }
        // $pilotInfo = unserialize(self::$rd -> get($pilot_key));
        // $pirateInfo = unserialize(self::$rd -> get($pirate_key));
-       $portInfo = unserialize(self::$rd -> get($port_key));  
+       $allPortInfo = unserialize(self::$rd -> get($port_key));  
        $insuranceInfo = unserialize(self::$rd -> get($insurance_key));
 
        
@@ -2261,22 +2257,28 @@ class Events
        $portGoods = array(); // 到港货物
        $shipInRoute = array();
        //  轮船结算
+
        foreach($allShipInfo as $shipId=>$shipInfo){
 
-           $color = $shipInfo['color'];
-           $shipGold = self::$gameConf['goods'][$color]['gold'];
+           $goodsId = $shipInfo['goods_id'];
+           $shipGold = self::$gameConf['goods'][$goodsId]['gold'];
            if($shipInfo['status'] == 1){
-                $portGoods[] = $color;
+                $portGoods[] = $goodsId;
                 $portShip += 1;
                 if(isset($shipInfo['pirate_id'])){ // 被劫船只
                     $pirateId = $shipInfo['pirate_id'];
                     $userList[$pirateId] += $shipGold;
+                    file_put_contents("/mylog.log",$pirateId.'---'.$shipGold."------111------\r\n\r\n",FILE_APPEND);
                 }else{
-                    $workers = count($shipInfo['cell']);
+                    $workers = 0;
+                    if(isset($shipInfo['cell'])){
+                        $workers = count($shipInfo['cell']);
+                    }
                     if($workers > 0){
                         $gold = $shipGold / $workers;
                         foreach ($shipInfo['cell'] as $workerUid) {
                             $userList[$workerUid] += $gold;
+                            file_put_contents("/mylog.log",$workerUid.'---'.$gold."------222------\r\n\r\n",FILE_APPEND);
                         }
                     }
                 }
@@ -2285,6 +2287,7 @@ class Events
                 if(isset($shipInfo['pirate_id'])){ // 被劫船只
                     $pirateId = $shipInfo['pirate_id'];
                     $userList[$pirateId] += $shipGold;
+                    file_put_contents("/mylog.log",$pirateId.'---'.$shipGold."------333------\r\n\r\n",FILE_APPEND);
                 }
 
                 if($shipInfo['status'] == 0){
@@ -2295,17 +2298,19 @@ class Events
        }
 
        // 港口 修理厂 结算
-       foreach($portInfo as $portId=>$portInfo){
+       foreach($allPortInfo as $portId=>$portInfo){
             $portUid = $portInfo['uid'];
             $ships = self::$gameConf['port'][$portId]['ship'];
             $gold = self::$gameConf['port'][$portId]['reward'];
             if($portId <= 3){ // 港口
                 if($portShip >= $ships){
                     $userList[$portUid] += $gold;
+                    file_put_contents("/mylog.log",$portUid.'---'.$gold."------444------\r\n\r\n",FILE_APPEND);
                 }
             }else{ // 修理厂
                 if($repairShip >= $ships){
                     $userList[$portUid] += $gold;
+                    file_put_contents("/mylog.log",$portUid.'---'.$gold."------555------\r\n\r\n",FILE_APPEND);
                 }
             }
 
@@ -2318,6 +2323,7 @@ class Events
             for($i=4;$i<=$repairShip+3;$i++){
                  $gold = self::$gameConf['port'][$i]['reward'];
                  $userList[$insuranceUid] -= $gold;
+                 file_put_contents("/mylog.log",$insuranceUid.'---'.$gold."------666------\r\n\r\n",FILE_APPEND);
             }
 
 
@@ -2336,7 +2342,12 @@ class Events
        // 股价提升
        if(!empty($portGoods)){
             foreach($portGoods as $k=>$stockId){
-                $room_status['stock_list'][$stockId] += 1;
+                if(isset($room_status['stock_list'][$stockId])){
+                    $room_status['stock_list'][$stockId] += 1;
+                }else{
+                    $room_status['stock_list'][$stockId] = 1;
+                }
+                
                 if($room_status['stock_list'][$stockId] >= 5){
                     $end = 1;
                 }
@@ -2356,9 +2367,58 @@ class Events
     }
 
 
-    // 初始化 进入下回合
-    public static function initRound(){
+    /*
 
+        array(
+            'status'=>0, // 0 准备中  1 已开始
+            'round'=>1 //回合数
+            'turn'=>array($uid,$uid),//玩家顺序
+            'now'=>0,//0~5 //当前回合玩家
+            'step'=>0, 1 叫地主 2 买股票 3 选货物 
+            'play'=>1, // 1 掷骰子
+            'price_info'=>array('uid'=>$uid,'num'=>$price),
+            'give_up'=>array($uid=>0,$uid=>0),
+            'captain'=>$uid,
+            'goods'=>array(1=>2,2=>3,3=>1),// 1~4种货物 位置-1=>颜色
+            'ship'=>array(1=>0,2=>0,3=>0),// 轮船起始位置
+            'stock_list'=>array(1=>0,2=>1,3=>1,4=>3),  // 股票价格
+        )
+
+    */
+
+
+    // 初始化 进入下回合
+    public static function initRound($room_id){
+
+        $room_status_key = "m_room_status_{$room_id}";//房间状态
+        $ship_key = "m_ship_{$room_id}"; // 轮船
+        $port_key = "m_port_{$room_id}"; // 港口&修理厂
+          
+        $pirate_key = "m_pirate_{$room_id}"; // 海盗
+        $pilot_key = "m_pilot_{$room_id}"; // 领航员
+        $insurance_key = "m_insurance_{$room_id}"; // 保险
+
+        self::$rd -> delete($ship_key);
+        self::$rd -> delete($port_key);
+        self::$rd -> delete($pirate_key);
+        self::$rd -> delete($pilot_key);
+        self::$rd -> delete($insurance_key);
+
+        $room_status = unserialize(self::$rd->get($room_status_key));
+        $room_status['give_up'] = array(); 
+        $room_status['price'] = 0; 
+        $room_status['step'] = 1;
+        $room_status['play'] = 0;
+        $room_status['round'] = 0;
+
+        unset($room_status['captain']);
+        unset($room_status['price_info']);
+        unset($room_status['goods']);
+        unset($room_status['ship']);
+        unset($room_status['pirate']);
+        unset($room_status['pilot']);
+
+        self::$rd->set($room_status_key,serialize($room_status));
     }
 
 }

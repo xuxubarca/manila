@@ -563,7 +563,7 @@ function showBoarding(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']['turn']){
+	if(data['pilot']){
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		}
@@ -642,7 +642,7 @@ function showPort(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']['turn']){
+	if(data['pilot']){
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		}
@@ -665,7 +665,7 @@ function showPilot(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']['turn']){
+	if(data['pilot']){
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		} 
@@ -691,7 +691,7 @@ function showPirate(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']['turn']){
+	if(data['pilot']){
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		}
@@ -711,7 +711,9 @@ function showInsurance(data){
 	if(captain==1 && play==1){
 		startPlayPoint();
 	}
-	if(data['pilot']['turn']){
+	if(data['pilot']){
+		console.log(my_turn);
+		console.log(data['pilot']['turn']);
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		}
@@ -884,6 +886,70 @@ function stockPriceChange(stockList){
 
 }
 
+
+function initNextGame(){
+
+	$("#ship1").remove();
+	$("#ship2").remove();
+	$("#ship3").remove();
+
+	/* 保险 */
+	document.querySelectorAll('#box > div')[92].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[92].style.background = '#FFFFFF';
+
+	/* 港口 */
+	document.querySelectorAll('#box > div')[17].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[18].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[19].removeAttribute("onclick");
+
+	document.querySelectorAll('#box > div')[17].style.background = '#FFFFFF';
+	document.querySelectorAll('#box > div')[18].style.background = '#FFFFFF';
+	document.querySelectorAll('#box > div')[19].style.background = '#FFFFFF';
+	/* 修理厂 */
+	document.querySelectorAll('#box > div')[89].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[88].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[87].removeAttribute("onclick");
+
+	document.querySelectorAll('#box > div')[89].style.background = '#FFFFFF';
+	document.querySelectorAll('#box > div')[88].style.background = '#FFFFFF';
+	document.querySelectorAll('#box > div')[87].style.background = '#FFFFFF';
+
+	/* 海盗 */
+	document.querySelectorAll('#box > div')[6].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[16].removeAttribute("onclick");
+
+	document.querySelectorAll('#box > div')[6].style.background = '#FFFFFF';
+	document.querySelectorAll('#box > div')[16].style.background = '#FFFFFF';
+
+	/* 领航员 */
+	document.querySelectorAll('#box > div')[3].removeAttribute("onclick");
+	document.querySelectorAll('#box > div')[4].removeAttribute("onclick");
+
+	document.querySelectorAll('#box > div')[3].style.background = '#FFFFFF';
+	document.querySelectorAll('#box > div')[4].style.background = '#FFFFFF';
+
+	$('#p1').css("background-color","#FFFFFF");
+	$('#p2').css("background-color","#FFFFFF");
+	$('#p3').css("background-color","#FFFFFF");
+
+	shipStep[1]= 0;
+	shipStep[2]= 0;
+	shipStep[3]= 0;
+	portShips = 0;
+	repairShips = 0;
+	nowShip = 0;
+
+	if(captain == 1){
+		captain = 0;
+		callCaptain(0);
+	}
+
+}
+
+function openGoldList(){
+	$('.theme-popover-mask').fadeIn(100);
+	$('.theme-popover').slideDown(200);
+}
 
 function test(){
 	//document.querySelectorAll('#list > div')[20].onclick = click();

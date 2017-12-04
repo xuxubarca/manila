@@ -8,8 +8,10 @@
 		<link rel="stylesheet" href="./css/main.css">
 		<link rel="stylesheet" href="./css/postbirdAlertBox.css">
 
+		<link rel="stylesheet" href="./css/label.css" media="all">
 		<style type="text/css">
-			body {
+
+			body { 
 				/*box-sizing: border-box;*/
 				margin: 0;
 				padding: 0;
@@ -150,7 +152,9 @@
 				});
 			
 			}
-		</script>
+
+
+	</script>
 	</head>
 	<body onload="showPrompt();">
 		<script src="./js/main.js"></script>
@@ -489,6 +493,13 @@
 
 						if(data['result']){
 							stockPriceChange(data['result']['stock_list']);
+							for(var i=1;i<=3;i++){
+								if(shipStep[i]<=13){
+									shipMoveIntoRepair(i);
+								}
+							}
+							//initNextGame();
+							setTimeout("initNextGame()",5000);
 						}
 						break;
 					// 海盗登船
@@ -557,6 +568,7 @@
 			}
 			
 		</script>
+
 		<div class="pwindow">
 	    <div class="point" id="point">
 			<div id="dice1" class="dice1 dice_1"></div>
@@ -570,6 +582,24 @@
 		<!--开始按钮 测试阶段用-->
 		<input type="button" onclick="start()" value="start"> 
 		<input type="button" onclick="stockPriceChange()" value="start1"> 
+
+		<div class="theme-buy">
+		<a class="btn btn-primary btn-large theme-login" href="javascript:open();">点击查看效果</a>
+		</div>
+		<div class="theme-popover">
+		     <div class="theme-poptit">
+			     <span class="label" style=" font-size: 16px;">金币结算</span>
+		          <a href="javascript:;" title="关闭" class="close">×</a>
+		     </div>
+
+			
+		<div class="goldList" id="goldList"></div>
+				
+		</div>
+			 
+
+		<div class="theme-popover-mask"></div>
+
 
 	</body>
 </html>
