@@ -19,10 +19,7 @@
  */
 //declare(ticks=1);
 
-/**
- * 聊天主逻辑
- * 主要是处理 onMessage onClose 
- */
+
 use \GatewayWorker\Lib\Gateway;
 //use \GatewayWorker\Lib\Db;
 
@@ -75,6 +72,7 @@ class Events
                 'client_id'=>$client_id,
                 'uid'=>$uid,
                 //'color'=>1,
+                'ready'=>0,
             ) 
             
             uid=>client_id : m_room_{$room_id}_player Hash
@@ -225,9 +223,8 @@ class Events
             // 拉取当前场上数据  TODO 地图信息尚未加入
             case 'map':
 
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
 
                 $room_id = $_SESSION['room_id'];
@@ -282,9 +279,8 @@ class Events
 
             // 开始 （测试版）
             case 'start':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -332,11 +328,10 @@ class Events
 
 
                 return;
-            // 叫地主报价
+            /* 叫地主报价 */
             case 'price':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -434,11 +429,10 @@ class Events
                 );
 
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
-            //放弃队长
+            /* 放弃队长 */
             case 'giveUp':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -530,9 +524,8 @@ class Events
             /* 队长购买股票 */
 
             case 'buystock':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -618,9 +611,8 @@ class Events
             /*   选择货物   */
 
             case 'chooseGoods':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -687,9 +679,8 @@ class Events
             /*  设置轮船起点 */
 
             case 'setOutset':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -743,9 +734,8 @@ class Events
             /*  确认轮船起点  */
 
             case 'confirmOutset':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -824,9 +814,8 @@ class Events
 
             case 'setWorker':
 
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                   return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -1015,9 +1004,11 @@ class Events
                         return;
                     }
                     $res = self::addMoney($uid,$room_id,$price,2);
-
+                    file_put_contents("/mylog.log",$price."---------price-------\r\n\r\n",FILE_APPEND);
                     if($res){
+
                         $portInfo[$portId] = $uid;
+                        file_put_contents("/mylog.log",json_encode($portInfo)."-------portInfo------\r\n\r\n",FILE_APPEND);
                         self::$rd->set($port_key,serialize($portInfo));
 
                         $room_status['now'] = $next;
@@ -1130,11 +1121,11 @@ class Events
                                 if(!empty($pilotInfo)){
                                     if(isset($pilotInfo[1])){
                                         $pilotUid = $pilotInfo[1]['uid'];
-                                        $pilotId = 1;
+                                        $nextPilotId = 1;
                                     }else{
                                         if(isset($pilotInfo[2])){
                                             $pilotUid = $pilotInfo[2]['uid'];
-                                            $pilotId = 2;
+                                            $nextPilotId = 2;
                                         }else{
                                             $room_status['play'] = 1; // 开始掷骰子
                                             $play = 1;
@@ -1146,7 +1137,7 @@ class Events
                                         $room_status['pilot'] = 1; // 领航员回合
                                         $pilot['uid'] = $pilotUid;
                                         $pilot['turn'] = $pilotTurn;
-                                        $pilot['id'] = $pilotId;
+                                        $pilot['id'] = $nextPilotId;
                                     }
                                 }else{
                                     $room_status['play'] = 1; // 开始掷骰子
@@ -1346,9 +1337,8 @@ class Events
             /*  掷骰子  */
 
             case 'playPoint':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                   return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -1428,7 +1418,7 @@ class Events
                     if(!empty($pirateInfo)){
                         $turn = $room_status['turn'];
                         $pirateUid = $pirateInfo[0]['uid'];
-                        $pirateTurn = array_search($captain, $turn);
+                        $pirateTurn = array_search($pirateUid, $turn);
                         $room_status['pirate'] = 1; // 海盗回合
 
                         $pirate['uid'] = $pirateUid;
@@ -1458,9 +1448,8 @@ class Events
 
             case 'pirateBoarding':
 
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -1651,9 +1640,8 @@ class Events
             /*   海盗选择进港或去修理厂  */
 
             case 'pirateChoose':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -1754,9 +1742,8 @@ class Events
 
             /*  领航员  */
             case 'pilotChoose':
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -1937,12 +1924,34 @@ class Events
 
                 );
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
+
+            case 'ready':
+
+                if(!isset($_SESSION['room_id'])){
+                   return;
+                }
+                $room_id = $_SESSION['room_id'];
+                $client_name = $_SESSION['client_name'];
+
+                $uid = self::getUid($room_id,$client_id);
+
+                $room_key = "m_room_{$room_id}";//房间信息 
+                $userInfo = unserialize(self::$rd->hget($room_key,$uid));
+                $userInfo['ready'] = 1;
+                self::$rd->hset($room_key,$uid,serialize($userInfo));
+
+                $allReady = self::getUserReadyInfo($room_id);
+                $new_message = array(
+                    'type'=>'ready',
+                    'all_ready'=>$allReady,
+
+                );
+                return Gateway::sendToGroup($room_id ,json_encode($new_message));
             //发言
             case 'say':
 
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -1975,9 +1984,8 @@ class Events
 
             case 'test':
 
-                if(!isset($_SESSION['room_id']))
-                {
-                    throw new \Exception("\$_SESSION['room_id'] not set. client_ip:{$_SERVER['REMOTE_ADDR']}");
+                if(!isset($_SESSION['room_id'])){
+                    return;
                 }
                 $room_id = $_SESSION['room_id'];
                 $client_name = $_SESSION['client_name'];
@@ -2240,7 +2248,6 @@ class Events
        foreach($turn as $k=>$v){
            $userList[$v] = 0;
        }
-       file_put_contents("/mylog.log",json_encode($userList)."------userList------\r\n\r\n",FILE_APPEND);
        $allShip = self::$rd -> hgetall($ship_key);
        $allShipInfo = array();
        foreach($allShip as $k=>$v){
@@ -2265,29 +2272,26 @@ class Events
            if($shipInfo['status'] == 1){
                 $portGoods[] = $goodsId;
                 $portShip += 1;
-                if(isset($shipInfo['pirate_id'])){ // 被劫船只
-                    $pirateId = $shipInfo['pirate_id'];
-                    $userList[$pirateId] += $shipGold;
-                    file_put_contents("/mylog.log",$pirateId.'---'.$shipGold."------111------\r\n\r\n",FILE_APPEND);
+                if(isset($shipInfo['pirate'])){ // 被劫船只
+                    $pirateUid = $shipInfo['pirate'];
+                    $userList[$pirateUid] += $shipGold;
                 }else{
                     $workers = 0;
-                    if(isset($shipInfo['cell'])){
-                        $workers = count($shipInfo['cell']);
+                    if(isset($shipInfo['cells'])){
+                        $workers = count($shipInfo['cells']);
                     }
                     if($workers > 0){
                         $gold = $shipGold / $workers;
-                        foreach ($shipInfo['cell'] as $workerUid) {
+                        foreach ($shipInfo['cells'] as $workerUid) {
                             $userList[$workerUid] += $gold;
-                            file_put_contents("/mylog.log",$workerUid.'---'.$gold."------222------\r\n\r\n",FILE_APPEND);
                         }
                     }
                 }
            }else{
                 $repairShip += 1;
-                if(isset($shipInfo['pirate_id'])){ // 被劫船只
-                    $pirateId = $shipInfo['pirate_id'];
-                    $userList[$pirateId] += $shipGold;
-                    file_put_contents("/mylog.log",$pirateId.'---'.$shipGold."------333------\r\n\r\n",FILE_APPEND);
+                if(isset($shipInfo['pirate'])){ // 被劫船只
+                    $pirateUid = $shipInfo['pirate'];
+                    $userList[$pirateUid] += $shipGold;
                 }
 
                 if($shipInfo['status'] == 0){
@@ -2298,19 +2302,17 @@ class Events
        }
 
        // 港口 修理厂 结算
-       foreach($allPortInfo as $portId=>$portInfo){
-            $portUid = $portInfo['uid'];
+       foreach($allPortInfo as $portId=>$portUid){
+            // $portUid = $portInfo['uid'];
             $ships = self::$gameConf['port'][$portId]['ship'];
             $gold = self::$gameConf['port'][$portId]['reward'];
             if($portId <= 3){ // 港口
                 if($portShip >= $ships){
                     $userList[$portUid] += $gold;
-                    file_put_contents("/mylog.log",$portUid.'---'.$gold."------444------\r\n\r\n",FILE_APPEND);
                 }
             }else{ // 修理厂
                 if($repairShip >= $ships){
                     $userList[$portUid] += $gold;
-                    file_put_contents("/mylog.log",$portUid.'---'.$gold."------555------\r\n\r\n",FILE_APPEND);
                 }
             }
 
@@ -2321,9 +2323,11 @@ class Events
             
             $insuranceUid = $insuranceInfo[0];
             for($i=4;$i<=$repairShip+3;$i++){
+                 if(!isset($allPortInfo[$i])){
+                    continue;
+                 }
                  $gold = self::$gameConf['port'][$i]['reward'];
                  $userList[$insuranceUid] -= $gold;
-                 file_put_contents("/mylog.log",$insuranceUid.'---'.$gold."------666------\r\n\r\n",FILE_APPEND);
             }
 
 
@@ -2390,6 +2394,8 @@ class Events
     // 初始化 进入下回合
     public static function initRound($room_id){
 
+        return;
+
         $room_status_key = "m_room_status_{$room_id}";//房间状态
         $ship_key = "m_ship_{$room_id}"; // 轮船
         $port_key = "m_port_{$room_id}"; // 港口&修理厂
@@ -2419,6 +2425,25 @@ class Events
         unset($room_status['pilot']);
 
         self::$rd->set($room_status_key,serialize($room_status));
+    }
+
+    public static function getUserReadyInfo($room_id){
+
+        $room_key = "m_room_{$room_id}";//房间信息 
+        $playerList = self::$rd -> hgetall($room_key);
+        $allReady = 1;
+        foreach($playerList as $k=>$v){
+            $playInfo = unserialize($v);
+            if(isset($playInfo['ready']) && $playInfo['ready'] == 1){
+                continue;
+            }else{
+                $allReady = 0;
+                break;
+            }
+        }
+
+        return $allReady;
+
     }
 
 }

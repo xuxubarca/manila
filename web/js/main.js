@@ -946,9 +946,36 @@ function initNextGame(){
 
 }
 
-function openGoldList(){
+function roundEndViews(goldList){
+
+	for(var i=1;i<=3;i++){
+		if(shipStep[i]<=13){
+			shipMoveIntoRepair(i);
+		}
+	}
+
+	setTimeout("openGoldList(goldList)",5000);
+}
+
+
+function openGoldList(goldList){
 	$('.theme-popover-mask').fadeIn(100);
 	$('.theme-popover').slideDown(200);
+
+	for(var u in goldList){
+		var newRow = "<tr><td>"+ u +"</td><td>"+ goldList[u] +"</td></tr>";
+		$('#goldTable').append(newRow);
+	}
+	t = setTimeout("closeGoldList()",10000);
+
+}
+
+function closeGoldList(){
+	$('.theme-popover-mask').fadeOut(100);
+	$('.theme-popover').slideUp(200);
+	clearTimeout(t);
+	ws.send('{"type":"ready"}');
+
 }
 
 function test(){

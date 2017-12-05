@@ -321,6 +321,7 @@
 					document.querySelectorAll('#buystock > div')[2].style.background = 'yellow';
 					document.querySelectorAll('#buystock > div')[3].style.background = 'green';
 					document.querySelectorAll('#buystock > div')[4].style.background = 'red';
+
 				},
 
 			}
@@ -351,10 +352,13 @@
 						console.log(data['client_name']+"登录成功");
 						if(data['my_id']){
 							my_turn = data['my_turn'];
+							if(my_turn == 0){
+								document.getElementById('switch').innerHTML = '<a class="btn btn-primary" href="javascript:start();">开始</a>';
+							}
 							ws.send('{"type":"map"}');
 						}
 						break;
-					//同步地图信息
+					// 同步地图信息
 					case 'map':
 						var client_list = data['clients_list'];
 						getPlayerList(client_list);
@@ -364,7 +368,14 @@
 					case 'stockMsg':
 						myStock(data['myStock']);
 						break;
-					//叫地主
+					// 玩家准备
+					case 'ready':
+						if(data['all_ready'] == 1){
+							initNextGame();
+						}
+
+						break;
+					// 叫地主
 					case 'callCaptain':
 						var now_price = 0;
 						if(data['price'] > 0){
@@ -493,13 +504,9 @@
 
 						if(data['result']){
 							stockPriceChange(data['result']['stock_list']);
-							for(var i=1;i<=3;i++){
-								if(shipStep[i]<=13){
-									shipMoveIntoRepair(i);
-								}
-							}
-							//initNextGame();
-							setTimeout("initNextGame()",5000);
+							var goldList = data['result']['gold_list'];
+							setTimeout("roundEndViews(goldList)",5000);
+
 						}
 						break;
 					// 海盗登船
@@ -542,7 +549,11 @@
 							}
 						}
 
-
+						if(data['result']){
+							stockPriceChange(data['result']['stock_list']);
+							var goldList = data['result']['gold_list'];
+							setTimeout("roundEndViews(goldList)",5000);
+						}
 						break;
 					// 领航员行动
 					case 'pilotChoose':
@@ -561,7 +572,6 @@
 						break;
 					// 用户退出 更新用户列表
 					case 'logout':
-						//say(data['from_client_id'], data['from_client_name'], data['from_client_name']+' 退出了', data['time']);
 						//delete client_list[data['from_client_id']];
 						//flush_client_list(data);	
 				}
@@ -579,25 +589,27 @@
 			<div class="pcolor" id="p3"></div>
 		</div>
 		</div>
-		<!--开始按钮 测试阶段用-->
-		<input type="button" onclick="start()" value="start"> 
-		<input type="button" onclick="stockPriceChange()" value="start1"> 
 
-		<div class="theme-buy">
-		<a class="btn btn-primary btn-large theme-login" href="javascript:open();">点击查看效果</a>
+		<div id="switch">
+		<!-- <a class="btn btn-primary" href="javascript:start();">测试</a> -->
 		</div>
 		<div class="theme-popover">
 		     <div class="theme-poptit">
-			     <span class="label" style=" font-size: 16px;">金币结算</span>
-		          <a href="javascript:;" title="关闭" class="close">×</a>
+			    <span class="label" style=" font-size: 16px;">金币结算</span>
+		        <a href="javascript:closeGoldList();" title="关闭" class="close">×</a>
 		     </div>
 
 			
-		<div class="goldList" id="goldList"></div>
+		<div class="goldList" id="goldList" style=" font-size: 20px;">
+			<center>
+				<table id="goldTable" style="text-align:center;"> 
+					<tr><th>玩家</th><th>金币</th></tr> 
+				</table>
+			</center>
+		 </div>
 				
 		</div>
 			 
-
 		<div class="theme-popover-mask"></div>
 
 
