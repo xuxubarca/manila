@@ -246,7 +246,10 @@
 	height: 50px;
 	line-height: 50px;
 	display: block;
-	border: 1px solid #000;
+}
+
+.message {
+	font-size: 20px;
 }
 
 .btn {

@@ -147,10 +147,9 @@
 					b.removeClass("dice_s").addClass("dice_e");
 				}).delay(100).animate({left:'-2px',top:'2px'},100,function(){
 					b.removeClass("dice_e").addClass("dice_"+num);
-					$("#result").html("您掷得点数是<span>"+num+"</span>");
 					//dice1.css('cursor','pointer');
 				});
-			
+
 			}
 
 
@@ -391,10 +390,14 @@
 
 							if(data['captain']){
 								alert(data['captain']['uid']+ '成为队长');
+								// var msg = data['captain']['uid'] + "成为队长";
+								// showMsg(msg);
 								$("#price").css('display','none');
 								$("#user"+data['captain']['turn']).css('box-shadow', '0px 0px 5px 5px rgba(205, 241, 9, 0.6)');
 								nowTurn(data['captain']['turn']);
 
+								var msg = "队长购买股票";
+								showMsg(msg);
 								if(data['captain']['uid'] == uid){
 									startBuyStock();
 									captain = 1;
@@ -422,13 +425,20 @@
 					// 买股票
 					case 'buystock':
 						if(data['give_up']){
-							alert('队长放弃购买股票');
+							// alert('队长放弃购买股票');
 						}else{
 							if(captain == 1){
+								if(data['message'] == 'no_money'){
+									alert('金币不够');
+									break;
+								}else if(data['message'] == 'sold_out'){
+									alert('已售完');
+									break;
+								}
 								myStock(data['my_stock']);
 							}
 						}
-
+						console.log("======"+captain+"======");
 						if(captain == 1){
 							endBuyStock();
 							startChooseGoods(1);
@@ -441,6 +451,8 @@
 					case 'chooseGoods':
 						choosed(data['goods_info']);
 						if(data['finish']){ // 货物选择结束
+							var msg = "队长设置货船起点";
+							showMsg(msg);
 							if(captain == 1){
 								initShipOutset();
 							}
@@ -500,13 +512,26 @@
 							if(my_turn == data['pirate']['turn']){
 								startPirateBoarding();
 							}
+							var msg = "海盗行动";
+							showMsg(msg);
 						}
 
 						if(data['result']){
 							stockPriceChange(data['result']['stock_list']);
-							var goldList = data['result']['gold_list'];
-							setTimeout("roundEndViews(goldList)",5000);
-
+							var gList = data['result']['gold_list'];
+							var end = data['result']['end'];
+							console.log(end);
+							if(end == 1){
+								console.log("----1111----");
+								var msg = "本局结束";
+								showMsg(msg);
+								var list = data['result']['finally'];
+								// openFinallyList(list);
+								setTimeout(function(){openFinallyList(list);},5000);
+							}else{
+								setTimeout(function(){roundEndViews(gList);},5000);
+							}
+							
 						}
 						break;
 					// 海盗登船
@@ -551,8 +576,19 @@
 
 						if(data['result']){
 							stockPriceChange(data['result']['stock_list']);
-							var goldList = data['result']['gold_list'];
-							setTimeout("roundEndViews(goldList)",5000);
+							var gList = data['result']['gold_list'];
+							var end = data['result']['end'];
+							console.log(end);
+							if(end == 1){
+								console.log("----1111----");
+								var msg = "本局结束";
+								showMsg(msg);
+								var list = data['result']['finally'];
+								// openFinallyList(list);
+								setTimeout(function(){openFinallyList(list);},5000);
+							}else{
+								setTimeout(function(){roundEndViews(gList);},5000);
+							}
 						}
 						break;
 					// 领航员行动
@@ -589,25 +625,39 @@
 			<div class="pcolor" id="p3"></div>
 		</div>
 		</div>
-
+		<!-- <input type="button" onclick="tt()" value="start">  -->
 		<div id="switch">
 		<!-- <a class="btn btn-primary" href="javascript:start();">测试</a> -->
 		</div>
 		<div class="theme-popover">
-		     <div class="theme-poptit">
-			    <span class="label" style=" font-size: 16px;">金币结算</span>
-		        <a href="javascript:closeGoldList();" title="关闭" class="close">×</a>
-		     </div>
+		    <div class="theme-poptit">
+			   <span class="label" style=" font-size: 16px;">金币结算</span>
+		       <a href="javascript:closeGoldList();" title="关闭" class="close">×</a>
+		    </div>
 
 			
-		<div class="goldList" id="goldList" style=" font-size: 20px;">
-			<center>
-				<table id="goldTable" style="text-align:center;"> 
-					<tr><th>玩家</th><th>金币</th></tr> 
-				</table>
-			</center>
-		 </div>
+			<div class="goldList" id="goldList" style=" font-size: 20px;">
+				<center>
+					<table id="goldTable" style="text-align:center;"> 
+						
+					</table>
+				</center>
+		 	</div>
 				
+		</div>
+
+		<div class="theme-popover-finally">
+		     <div class="theme-poptit">
+			    <span class="label" style=" font-size: 16px;">本局结算</span>
+		        <a href="javascript:closeFinallyList();" title="关闭" class="close">×</a>
+		     </div>
+			<div class="finallyList" id="finallyList" style=" font-size: 20px;">
+				<center>
+					<table id="finallyTable" style="text-align:center;"> 
+						 
+					</table>
+				</center>
+			 </div>
 		</div>
 			 
 		<div class="theme-popover-mask"></div>

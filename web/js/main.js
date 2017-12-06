@@ -127,11 +127,14 @@ function start(){
 
 //叫地主
 function callCaptain(nowPrice) {
+
+	var msg = "选队长";
+	showMsg(msg);
+
 	PostbirdAlertBox.prompt({
 		'title': '输入金额',
 		'okBtn': '提交',
 		onConfirm: function (data) {
-			console.log("输入框内容是：" + data);
 			data = parseInt(data);
 			nowPrice = parseInt(nowPrice);
 			var reg = /^[1-9]*[1-9][0-9]*$/;
@@ -220,6 +223,9 @@ function startChooseGoods(isCaptain){
 	document.querySelectorAll('#list > div')[21].style.borderColor="#FF8000";
 	document.querySelectorAll('#list > div')[22].style.borderColor="#FF8000";
 	document.querySelectorAll('#list > div')[23].style.borderColor="#FF8000";
+
+	var msg = "队长选择货物";
+	showMsg(msg);
 }
 // 结束选货物
 function endChooseGoods(){
@@ -308,6 +314,7 @@ function initShipOutset(){
 		j++;
 	}
 	$('#confirm').css('display','block');
+
 }
 // 结束轮船起点设置
 function endShipOutset(){
@@ -429,6 +436,7 @@ function shipMoveIntoRepair(shipId){
 	}
 	$("#ship"+shipId).animate({top:move});
 	repairShips = repairShips + 1;
+	shipStep[shipId] = 15;
 }
 
 // 更新玩家金币
@@ -485,6 +493,9 @@ function initGame(){
 	document.querySelectorAll('#box > div')[3].setAttribute("onclick","pilot(1)");
 	document.querySelectorAll('#box > div')[4].setAttribute("onclick","pilot(2)");
 
+	var msg = "放置工人";
+	showMsg(msg);
+
 }
 // 
 function endGameChoose(){
@@ -512,6 +523,7 @@ function endGameChoose(){
 	/* 领航员 */
 	document.querySelectorAll('#box > div')[3].removeAttribute("onclick");
 	document.querySelectorAll('#box > div')[4].removeAttribute("onclick");
+
 }
 
 // 工人上船
@@ -560,7 +572,7 @@ function showBoarding(data){
 	}
 	
 	document.querySelectorAll('#ship'+ shipId +' > div')[n].style.background = color;
-	if(captain==1 && play==1){
+	if(play==1){
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -639,7 +651,7 @@ function showPort(data){
 	
 	document.querySelectorAll('#box > div')[n].style.background = color;
 
-	if(captain==1 && play==1){
+	if(play==1){
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -662,7 +674,7 @@ function showPilot(data){
 	var n = 2 + parseInt(pilotId);
 	document.querySelectorAll('#box > div')[n].style.background = color;
 
-	if(captain==1 && play==1){
+	if(play==1){
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -688,7 +700,7 @@ function showPirate(data){
 	}
 	document.querySelectorAll('#box > div')[n].style.background = color;
 
-	if(captain==1 && play==1){
+	if(play==1){
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -708,12 +720,10 @@ function showInsurance(data){
 	
 	document.querySelectorAll('#box > div')[92].style.background = color;
 
-	if(captain==1 && play==1){
+	if(play==1){
 		startPlayPoint();
 	}
 	if(data['pilot']){
-		console.log(my_turn);
-		console.log(data['pilot']['turn']);
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		}
@@ -724,17 +734,25 @@ function showInsurance(data){
 }
 // 开始掷骰子
 function startPlayPoint(){
-	document.getElementById('point').setAttribute("onclick","getServerPoint()");
-	document.getElementById('dice1').style.borderColor = '#FF8000';
-	document.getElementById('dice2').style.borderColor = '#FF8000';
-	document.getElementById('dice3').style.borderColor = '#FF8000';
+	if(captain==1){
+		document.getElementById('point').setAttribute("onclick","getServerPoint()");
+		document.getElementById('dice1').style.borderColor = '#FF8000';
+		document.getElementById('dice2').style.borderColor = '#FF8000';
+		document.getElementById('dice3').style.borderColor = '#FF8000';
+	}
+	
+	var msg = "队长掷骰子";
+	showMsg(msg);
 }
 // 结束掷骰子
 function endPlayPoint(){
 	document.getElementById('point').removeAttribute("onclick");
-	document.getElementById('dice1').style.borderColor = '#FFFFFF';
-	document.getElementById('dice2').style.borderColor = '#FFFFFF';
-	document.getElementById('dice3').style.borderColor = '#FFFFFF';
+	document.getElementById('dice1').style.borderColor = '#000000';
+	document.getElementById('dice2').style.borderColor = '#000000';
+	document.getElementById('dice3').style.borderColor = '#000000';
+
+	var msg = "放置工人";
+	showMsg(msg);
 }
 // 获得点数
 function getServerPoint(){
@@ -785,9 +803,14 @@ function endPirateChoose(){
 // 提示消息
 function showMsg(msg){
 
-	document.getElementById('msg').innerHTML = '<p>'+ msg +'</p>';
+	document.getElementById('msg').innerHTML = '<p class="message">'+ msg +'</p>';
 }
+// 清除消息
+function clearMsg(){
 
+	document.getElementById('msg').innerHTML = '<p class="message"> </p>';
+}
+// 领航员行动
 function startPilotChoose(pilotId){
 
 	var n = 0;
@@ -827,6 +850,9 @@ function startPilotChoose(pilotId){
 		}
 	}
 
+	var msg = "领航员行动";
+	showMsg(msg);
+
 }
 
 function endPilotChoose(play){
@@ -844,7 +870,7 @@ function endPilotChoose(play){
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
 	}
 
-	if(captain==1 && play==1){
+	if(play==1){
 		startPlayPoint();
 	}
 
@@ -946,22 +972,25 @@ function initNextGame(){
 
 }
 
-function roundEndViews(goldList){
-
+function roundEndViews(gList){
 	for(var i=1;i<=3;i++){
 		if(shipStep[i]<=13){
 			shipMoveIntoRepair(i);
 		}
 	}
 
-	setTimeout("openGoldList(goldList)",5000);
+	var msg = "本轮结束";
+	showMsg(msg);
+	setTimeout(function(){ openGoldList(gList);},5000);
 }
 
 
 function openGoldList(goldList){
 	$('.theme-popover-mask').fadeIn(100);
 	$('.theme-popover').slideDown(200);
-
+	$('#goldTable').empty();
+	var title = "<tr><th>玩家</th><th>金币</th></tr> ";
+	$('#goldTable').append(title);
 	for(var u in goldList){
 		var newRow = "<tr><td>"+ u +"</td><td>"+ goldList[u] +"</td></tr>";
 		$('#goldTable').append(newRow);
@@ -978,6 +1007,26 @@ function closeGoldList(){
 
 }
 
+function openFinallyList(list){
+	$('.theme-popover-mask').fadeIn(100);
+	$('.theme-popover-finally').slideDown(200);
+	$('#finallyTable').empty();
+	var title = "<tr><th>玩家</th><th>金币</th><th>股票</th><th>总计</th></tr>";
+	$('#finallyTable').append(title);
+	for(var u in list){
+		var gold = list[u]['gold'];
+		var stock = list[u]['stock'];
+		var total = parseInt(gold) + parseInt(stock);
+		var newRow = "<tr><td>"+ u +"</td><td>"+ gold +"</td><td>"+ stock +"</td><td>"+ total +"</td></tr>";
+		$('#finallyTable').append(newRow);
+	}
+}
+
+function closeFinallyList(){
+	$('.theme-popover-mask').fadeOut(100);
+	$('.theme-popover-finally').slideUp(200);
+}
+
 function test(){
 	//document.querySelectorAll('#list > div')[20].onclick = click();
 	//document.querySelectorAll('#list > div')[20].setAttribute("onclick","tt()");
@@ -989,4 +1038,6 @@ function tt(){
 	//var num = $(".ship").length;
 	//var color = document.querySelectorAll('#list > div')[20].style.backgroundColor;
 	//alert(color);
+	$('.theme-popover-mask').fadeIn(100);
+	$('.theme-popover-finally').slideDown(200);
 }

@@ -50,7 +50,7 @@ a {
 
 
 
-/* ÒõÓ° */
+/* é˜´å½± */
 .theme-popover-mask {
 	z-index: 9998;
 	position:fixed;
@@ -64,7 +64,7 @@ a {
 	display:none
 }
 
-/* µ¯´° */
+/* å¼¹çª— */
 .theme-popover {
 	z-index:9999;
 	position:fixed;
@@ -82,13 +82,31 @@ a {
 	overflow-y:auto
 }
 
-/* xµÄÎ»ÖÃ */
+/* å¼¹çª— */
+.theme-popover-finally {
+	z-index:9999;
+	position:fixed;
+	top:50%;
+	left:50%;
+	width:450px;
+	height:230px;
+	margin:-180px 0 0 -330px;
+	border-radius:5px;
+	border:solid 2px #666;
+	background-color:#fff;
+	display:none;
+	box-shadow: 0 0 10px #666;
+	position:absolute;
+	overflow-y:auto
+}
+
+/* xçš„ä½ç½® */
 .theme-poptit {
 	padding:12px;
 	position: relative;
 }
 
-/* xµÄÎ»ÖÃ */
+/* xçš„ä½ç½® */
 .theme-poptit .close {
 	float:right;
 	color:#999;
@@ -98,7 +116,7 @@ a {
 	text-shadow:0 1px 0 #ddd
 }
 
-/* Êó±êĞü¸¡XÑÕÉ«¸Ä±ä */
+/* é¼ æ ‡æ‚¬æµ®Xé¢œè‰²æ”¹å˜ */
 .theme-poptit .close:hover {
 	color:#444;
 }

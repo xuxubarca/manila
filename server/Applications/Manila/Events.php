@@ -563,6 +563,10 @@ class Events
 
                     $lastStock = $room_status['last_stock'];
                     if($lastStock[$stockId] <= 0){ // 卖完
+                        $new_message = array(
+                            'type'=>'buystock',
+                            'message'=>'sold_out',
+                        );
                         return;
                     }
 
@@ -2323,7 +2327,7 @@ class Events
             
             $insuranceUid = $insuranceInfo[0];
             for($i=4;$i<=$repairShip+3;$i++){
-                 if(!isset($allPortInfo[$i])){
+                 if(!isset($allPortInfo[$i]) || $allPortInfo[$i]==$insuranceUid){
                     continue;
                  }
                  $gold = self::$gameConf['port'][$i]['reward'];
@@ -2352,7 +2356,7 @@ class Events
                     $room_status['stock_list'][$stockId] = 1;
                 }
                 
-                if($room_status['stock_list'][$stockId] >= 5){
+                if($room_status['stock_list'][$stockId] >= 4){
                     $end = 1;
                 }
             }
@@ -2362,9 +2366,31 @@ class Events
        }
        
        $balance['gold_list'] = $userList;
-       $balance['stock_list'] = $portGoods;
+       $balance['stock_list'] = $room_status['stock_list'];
        $balance['ship_route'] = $shipInRoute;
        $balance['end'] = $end;
+
+       // 整场结束
+       if($end){
+            $list = array();
+            $stockList = $room_status['stock_list'];
+            $stockPriceList = self::$gameConf['stock_list'];
+            $room_key = "m_room_{$room_id}";//房间信息
+            $allUserInfo = self::$rd -> hgetall($room_key);
+            foreach($allUserInfo as $uid=>$v){
+                $myStockPrice = 0;
+                $userInfo = unserialize($v);
+                $stock = $userInfo['stock'];
+                foreach($stock as $stockId){
+                    $stockLv = $stockList[$stockId];
+                    $stockPrice = $stockPriceList[$stockLv];
+                    $myStockPrice += $stockPrice;
+                }
+                $list[$uid]['gold'] = $userInfo['gold'];
+                $list[$uid]['stock'] = $myStockPrice;
+            }
+            $balance['finally'] = $list;
+       }
 
        return $balance;
 
@@ -2393,8 +2419,6 @@ class Events
 
     // 初始化 进入下回合
     public static function initRound($room_id){
-
-        return;
 
         $room_status_key = "m_room_status_{$room_id}";//房间状态
         $ship_key = "m_ship_{$room_id}"; // 轮船
