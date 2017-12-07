@@ -231,6 +231,7 @@
 						}
 					}
 					str += 	'<div class="confirm" id="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
+					str += 	'<div class="confirm" id="giveUpSetWorker"><a class="btn btn-primary" href="javascript:confirmShipOutset();">放弃放置工人</a></div>';
 					str += 	'<div class="confirm" id="pirateGiveUp"><a class="btn btn-primary" href="javascript:pirateGiveUp(2);">放弃登船</a></div>';
 					str += 	'<div class="gotoPort" id="gotoPort"><a class="btn btn-primary" href="javascript:pirateChoose(1);">进港</a></div>';
 					str += 	'<div class="gotoRepair" id="gotoRepair"><a class="btn btn-primary" href="javascript:pirateChoose(2);">进修理厂</a></div>';
@@ -522,7 +523,6 @@
 							var end = data['result']['end'];
 							console.log(end);
 							if(end == 1){
-								console.log("----1111----");
 								var msg = "本局结束";
 								showMsg(msg);
 								var list = data['result']['finally'];

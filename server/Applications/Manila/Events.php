@@ -497,6 +497,9 @@ class Events
                         $room_status['price'] = 0; 
                         $room_status['captain'] = $captain;
                         $room_status['step'] = 2;
+                        $room_status['ship'][1] = 0;
+                        $room_status['ship'][2] = 0;
+                        $room_status['ship'][3] = 0;
                         self::$rd->set($room_status_key,serialize($room_status));
 
                         $new_message['captain']['uid'] = $captain;   
@@ -1394,9 +1397,9 @@ class Events
                     return;
                 }
                 
-                $pointArr[1] = 3;
-                $pointArr[2] = 3;
-                $pointArr[3] = 1;
+                // $pointArr[1] = 3;
+                // $pointArr[2] = 3;
+                // $pointArr[3] = 1;
                 $pirateRound = 0; // 是否是海盗回合
                 $ship_key = "m_ship_{$room_id}"; //轮船
                 for($i=1;$i<=$num;$i++){
