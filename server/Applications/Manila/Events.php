@@ -1011,11 +1011,9 @@ class Events
                         return;
                     }
                     $res = self::addMoney($uid,$room_id,$price,2);
-                    file_put_contents("/mylog.log",$price."---------price-------\r\n\r\n",FILE_APPEND);
                     if($res){
 
                         $portInfo[$portId] = $uid;
-                        file_put_contents("/mylog.log",json_encode($portInfo)."-------portInfo------\r\n\r\n",FILE_APPEND);
                         self::$rd->set($port_key,serialize($portInfo));
 
                         $room_status['now'] = $next;
@@ -1331,6 +1329,51 @@ class Events
                     }else{
                         return;
                     }
+                }elseif($message_data['action'] == 'giveUp'){ // 放弃放置工人
+                    $room_status['now'] = $next;
+                    $play = 0;
+                    $pilot = array();
+                    if($next == $captain_turn){ // 放置工人结束
+                        if($room_status['round'] == 3){ // 最后一轮掷骰子之前  领航员活动
+                            $pilot_key = "m_pilot_{$room_id}"; // 领航员
+                            $pilotInfo = unserialize(self::$rd->get($pilot_key));
+                            if(!empty($pilotInfo)){
+                                if(isset($pilotInfo[1])){
+                                    $pilotUid = $pilotInfo[1]['uid'];
+                                    $pilotId = 1;
+                                }else{
+                                    if(isset($pilotInfo[2])){
+                                        $pilotUid = $pilotInfo[2]['uid'];
+                                        $pilotId = 2;
+                                    }else{
+                                        $room_status['play'] = 1; // 开始掷骰子
+                                        $play = 1;
+                                    }
+                                }    
+                                
+                                if(!$play){
+                                    $pilotTurn = array_search($pilotUid, $turn);
+                                    $room_status['pilot'] = 1; // 领航员回合
+                                    $pilot['uid'] = $pilotUid;
+                                    $pilot['turn'] = $pilotTurn;
+                                    $pilot['id'] = $pilotId;
+                                }
+                            }else{
+                                $room_status['play'] = 1; // 开始掷骰子
+                                $play = 1;
+                            }
+                        }else{
+                            $room_status['play'] = 1; // 开始掷骰子
+                            $play = 1;
+                        }
+                    }
+                    self::$rd -> set($room_status_key,serialize($room_status));
+
+                    $new_message = array(
+                        'type'=>'workerGiveUp', 
+                        'play'=>$play,
+                        'next'=>$next,
+                    ); 
                 }
                 
                 if(!empty($pilot)){
@@ -1954,6 +1997,7 @@ class Events
 
                 );
                 return Gateway::sendToGroup($room_id ,json_encode($new_message));
+
             //发言
             case 'say':
 

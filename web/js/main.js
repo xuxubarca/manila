@@ -170,7 +170,7 @@ function getCaptainMessage(price,captain){
 	$('#price').html(str);
 }
 // 当前回合玩家
-function nowTurn(turn){
+function nowTurn(turn,flag=0){
 
 	// $('#player div').each(function(i){
 	// 	$(this).css({'background-color' : "#FFFFFF"});	
@@ -181,6 +181,10 @@ function nowTurn(turn){
 	}
 
 	$('#user'+turn).css("background-color","#FF8C00");
+	if(flag == 1){
+		$('#confirm').css('display','giveUpSetWorker');
+	}
+	
 }
 // 买股票面板
 function initBuyStockViews(){
@@ -732,6 +736,23 @@ function showInsurance(data){
 		nowTurn(next);
 	}
 }
+// 放弃放置工人
+function showWorkerGiveUp(data){
+
+	if(play==1){
+		startPlayPoint();
+	}
+	if(data['pilot']){
+		if(my_turn == data['pilot']['turn']){
+			startPilotChoose(data['pilot']['id']); 
+		}
+		nowTurn(data['pilot']['turn']);
+	}else{
+		nowTurn(next);
+	}
+
+}
+
 // 开始掷骰子
 function startPlayPoint(){
 	if(captain==1){
@@ -964,14 +985,14 @@ function initNextGame(){
 	portShips = 0;
 	repairShips = 0;
 	nowShip = 0;
-
+	$("#price").css('display','block');
 	if(captain == 1){
 		captain = 0;
 		callCaptain(0);
 	}
 
 }
-
+// 一轮结束
 function roundEndViews(gList){
 	for(var i=1;i<=3;i++){
 		if(shipStep[i]<=13){
@@ -1025,6 +1046,10 @@ function openFinallyList(list){
 function closeFinallyList(){
 	$('.theme-popover-mask').fadeOut(100);
 	$('.theme-popover-finally').slideUp(200);
+}
+// 放弃放置工人
+function setWorkerGiveUp(){
+	ws.send('{"type":"setWorker","action":"giveUp"}');
 }
 
 function test(){

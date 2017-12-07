@@ -231,7 +231,7 @@
 						}
 					}
 					str += 	'<div class="confirm" id="confirm"><a class="btn btn-primary" href="javascript:confirmShipOutset();">确认轮船起点</a></div>';
-					str += 	'<div class="confirm" id="giveUpSetWorker"><a class="btn btn-primary" href="javascript:confirmShipOutset();">放弃放置工人</a></div>';
+					str += 	'<div class="confirm" id="giveUpSetWorker"><a class="btn btn-primary" href="javascript:setWorkerGiveUp();">放弃放置工人</a></div>';
 					str += 	'<div class="confirm" id="pirateGiveUp"><a class="btn btn-primary" href="javascript:pirateGiveUp(2);">放弃登船</a></div>';
 					str += 	'<div class="gotoPort" id="gotoPort"><a class="btn btn-primary" href="javascript:pirateChoose(1);">进港</a></div>';
 					str += 	'<div class="gotoRepair" id="gotoRepair"><a class="btn btn-primary" href="javascript:pirateChoose(2);">进修理厂</a></div>';
@@ -393,6 +393,7 @@
 								alert(data['captain']['uid']+ '成为队长');
 								// var msg = data['captain']['uid'] + "成为队长";
 								// showMsg(msg);
+								$('#price').html('');
 								$("#price").css('display','none');
 								$("#user"+data['captain']['turn']).css('box-shadow', '0px 0px 5px 5px rgba(205, 241, 9, 0.6)');
 								nowTurn(data['captain']['turn']);
@@ -439,7 +440,6 @@
 								myStock(data['my_stock']);
 							}
 						}
-						console.log("======"+captain+"======");
 						if(captain == 1){
 							endBuyStock();
 							startChooseGoods(1);
@@ -500,6 +500,10 @@
 					case 'insurance':
 						showInsurance(data);
 						break;
+					// 放弃放置工人
+					case 'workerGiveUp':
+						showWorkerGiveUp(data);
+						break;
 					// 掷骰子
 					case 'playPoint':
 						playPoint(data['point']);
@@ -548,11 +552,14 @@
 
 							}
 						}else{
-							nowTurn(data['next']);
+							
 							if(data['pirate'] == 1){ // 下回合还是海盗回合
+								nowTurn(data['next']);
 								if(my_turn == data['next']){
 									startPirateBoarding();
 								}
+							}else{
+								nowTurn(data['next'],1);
 							}
 						}
 					
@@ -566,12 +573,15 @@
 							shipMoveIntoRepair(data['ship_id']);
 						}
 
-						nowTurn(data['next']);
+						
 
-						if(data['pirate'] == 1){
+						if(data['pirate'] == 1){ // 下回合还是海盗回合
+							nowTurn(data['next']);
 							if(my_turn == data['next']){
 								startPirateBoarding();
 							}
+						}else{
+							nowTurn(data['next'],1);
 						}
 
 						if(data['result']){
@@ -580,7 +590,6 @@
 							var end = data['result']['end'];
 							console.log(end);
 							if(end == 1){
-								console.log("----1111----");
 								var msg = "本局结束";
 								showMsg(msg);
 								var list = data['result']['finally'];
@@ -599,9 +608,12 @@
 						if(data['finish']){
 							var play = data['play'];
 							endPilotChoose(play);
-							nowTurn(data['next']);
+							
 							if(data['pilot'] == 1 && my_turn == data['next']){
+								nowTurn(data['next']);
 								startPilotChoose(2);
+							}else{
+								nowTurn(data['next'],1);
 							}
 						}
 						
