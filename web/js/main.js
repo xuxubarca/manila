@@ -181,8 +181,8 @@ function nowTurn(turn,flag=0){
 	}
 
 	$('#user'+turn).css("background-color","#FF8C00");
-	if(flag == 1){
-		$('#confirm').css('display','giveUpSetWorker');
+	if(flag == 1 && my_turn==turn){
+		$('#giveUpSetWorker').css('display','block');
 	}
 	
 }
@@ -335,6 +335,7 @@ function endShipOutset(){
 		document.querySelectorAll('#box > div')[i].style.background = '#FFFFFF';
 	}
 	$('#confirm').css('display','none');
+	$('#giveUpSetWorker').css('display','block');
 }
 
 
@@ -576,7 +577,10 @@ function showBoarding(data){
 	}
 	
 	document.querySelectorAll('#ship'+ shipId +' > div')[n].style.background = color;
+	$('#giveUpSetWorker').css('display','none');
+	var flag = 1;
 	if(play==1){
+		flag = 0;
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -585,7 +589,7 @@ function showBoarding(data){
 		}
 		nowTurn(data['pilot']['turn']);
 	}else{
-		nowTurn(next);
+		nowTurn(next,flag);
 	}
 }
 
@@ -599,12 +603,8 @@ function showPirateBoarding(data){
 	var shipId = data['ship_id'];
 	var pirate = data['pirate'];
 	var goodsId = data['goods_id'];
-	nowTurn(next);
-	console.log(action);
-	console.log(next);
-	console.log(color);
-	console.log(shipId);
-	console.log(goodsId);
+	// nowTurn(next);
+
 	//console.log(action);
 	if(action == 'boarding'){
 		var cell = data['cell'];
@@ -654,8 +654,10 @@ function showPort(data){
 	}
 	
 	document.querySelectorAll('#box > div')[n].style.background = color;
-
+	$('#giveUpSetWorker').css('display','none');
+	var flag = 1;
 	if(play==1){
+		flag = 0;
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -664,7 +666,7 @@ function showPort(data){
 		}
 		nowTurn(data['pilot']['turn']);
 	}else{
-		nowTurn(next);
+		nowTurn(next,flag);
 	}
 }
 
@@ -677,8 +679,10 @@ function showPilot(data){
 	
 	var n = 2 + parseInt(pilotId);
 	document.querySelectorAll('#box > div')[n].style.background = color;
-
+	$('#giveUpSetWorker').css('display','none');
+	var flag = 1;
 	if(play==1){
+		flag = 0;
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -687,7 +691,7 @@ function showPilot(data){
 		} 
 		nowTurn(data['pilot']['turn']);
 	}else{
-		nowTurn(next);
+		nowTurn(next,flag);
 	}
 }
 
@@ -703,8 +707,10 @@ function showPirate(data){
 		var n = 6;
 	}
 	document.querySelectorAll('#box > div')[n].style.background = color;
-
+	$('#giveUpSetWorker').css('display','none');
+	var flag = 1;
 	if(play==1){
+		flag = 0;
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -713,7 +719,7 @@ function showPirate(data){
 		}
 		nowTurn(data['pilot']['turn']);
 	}else{
-		nowTurn(next);
+		nowTurn(next,flag);
 	}
 }
 // 保险
@@ -723,8 +729,10 @@ function showInsurance(data){
 	var play = data['play'];
 	
 	document.querySelectorAll('#box > div')[92].style.background = color;
-
+	$('#giveUpSetWorker').css('display','none');
+	var flag = 1;
 	if(play==1){
+		flag = 0;
 		startPlayPoint();
 	}
 	if(data['pilot']){
@@ -733,22 +741,26 @@ function showInsurance(data){
 		}
 		nowTurn(data['pilot']['turn']);
 	}else{
-		nowTurn(next);
+		nowTurn(next,flag);
 	}
 }
 // 放弃放置工人
 function showWorkerGiveUp(data){
-
+	var next = data['next'];
+	var play = data['play'];
+	var flag = 1;
 	if(play==1){
+		flag = 0;
 		startPlayPoint();
 	}
+	$('#giveUpSetWorker').css('display','none');
 	if(data['pilot']){
 		if(my_turn == data['pilot']['turn']){
 			startPilotChoose(data['pilot']['id']); 
 		}
 		nowTurn(data['pilot']['turn']);
 	}else{
-		nowTurn(next);
+		nowTurn(next,flag);
 	}
 
 }

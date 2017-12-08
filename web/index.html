@@ -474,7 +474,9 @@
 							}
 							if(captain == 1){
 								endShipOutset();
+
 							}
+
 							initGame(); // 开始游戏
 
 						}
@@ -536,6 +538,10 @@
 								setTimeout(function(){roundEndViews(gList);},5000);
 							}
 							
+						}else{
+							if(captain && !data['pirate']){
+								$('#giveUpSetWorker').css('display','block');
+							}
 						}
 						break;
 					// 海盗登船
@@ -552,7 +558,10 @@
 
 							}
 						}else{
-							
+							if(data['message'] == 'full'){
+								alert('货船满员');
+								break;
+							}
 							if(data['pirate'] == 1){ // 下回合还是海盗回合
 								nowTurn(data['next']);
 								if(my_turn == data['next']){
@@ -607,13 +616,17 @@
 						
 						if(data['finish']){
 							var play = data['play'];
+							var flag = 1;
+							if(play == 1){
+								flag = 0;
+							}
 							endPilotChoose(play);
 							
 							if(data['pilot'] == 1 && my_turn == data['next']){
 								nowTurn(data['next']);
 								startPilotChoose(2);
 							}else{
-								nowTurn(data['next'],1);
+								nowTurn(data['next'],flag);
 							}
 						}
 						

@@ -21,6 +21,7 @@
 
 
 use \GatewayWorker\Lib\Gateway;
+use \Workerman\Lib\Timer;
 //use \GatewayWorker\Lib\Db;
 
 class Events
@@ -1250,7 +1251,6 @@ class Events
                         $new_message = array(
                             'type'=>'pirate', 
                             'play'=>$play,
-                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                             'pirate_id'=>$pirateId,
@@ -1322,7 +1322,6 @@ class Events
                         $new_message = array(
                             'type'=>'insurance', 
                             'play'=>$play,
-                            // 'pilot'=>$pilot,
                             'user_info'=>$userInfo,
                             'next'=>$next,
                         ); 
@@ -1631,6 +1630,12 @@ class Events
                             $shipWorker = count($shipCells);
 
                             if($shipWorker >= $cellsNum){ // 船满员
+                                $new_message = array(
+                                    'type'=>'pirateBoarding',
+                                    'action'=>'boarding',
+                                    'message'=>'full',
+                                );
+                                Gateway::sendToCurrentClient(json_encode($new_message));
                                 return; 
                             }
 
@@ -2314,60 +2319,66 @@ class Events
        $repairShip = 0;
        $portGoods = array(); // 到港货物
        $shipInRoute = array();
+
        //  轮船结算
+       if(!empty($allPortInfo)){
+           foreach($allShipInfo as $shipId=>$shipInfo){
 
-       foreach($allShipInfo as $shipId=>$shipInfo){
-
-           $goodsId = $shipInfo['goods_id'];
-           $shipGold = self::$gameConf['goods'][$goodsId]['gold'];
-           if($shipInfo['status'] == 1){
-                $portGoods[] = $goodsId;
-                $portShip += 1;
-                if(isset($shipInfo['pirate'])){ // 被劫船只
-                    $pirateUid = $shipInfo['pirate'];
-                    $userList[$pirateUid] += $shipGold;
-                }else{
-                    $workers = 0;
-                    if(isset($shipInfo['cells'])){
-                        $workers = count($shipInfo['cells']);
-                    }
-                    if($workers > 0){
-                        $gold = $shipGold / $workers;
-                        foreach ($shipInfo['cells'] as $workerUid) {
-                            $userList[$workerUid] += $gold;
+               $goodsId = $shipInfo['goods_id'];
+               $shipGold = self::$gameConf['goods'][$goodsId]['gold'];
+               if($shipInfo['status'] == 1){
+                    $portGoods[] = $goodsId;
+                    $portShip += 1;
+                    if(isset($shipInfo['pirate'])){ // 被劫船只
+                        $pirateUid = $shipInfo['pirate'];
+                        $userList[$pirateUid] += $shipGold;
+                    }else{
+                        $workers = 0;
+                        if(isset($shipInfo['cells'])){
+                            $workers = count($shipInfo['cells']);
+                        }
+                        if($workers > 0){
+                            $gold = $shipGold / $workers;
+                            foreach ($shipInfo['cells'] as $workerUid) {
+                                $userList[$workerUid] += $gold;
+                            }
                         }
                     }
-                }
-           }else{
-                $repairShip += 1;
-                if(isset($shipInfo['pirate'])){ // 被劫船只
-                    $pirateUid = $shipInfo['pirate'];
-                    $userList[$pirateUid] += $shipGold;
-                }
+               }else{
+                    $repairShip += 1;
+                    if(isset($shipInfo['pirate'])){ // 被劫船只
+                        $pirateUid = $shipInfo['pirate'];
+                        $userList[$pirateUid] += $shipGold;
+                    }
 
-                if($shipInfo['status'] == 0){
-                    $shipInRoute[] = $shipId;
-                }
+                    if($shipInfo['status'] == 0){
+                        $shipInRoute[] = $shipId;
+                    }
+               }
+
            }
-
        }
 
        // 港口 修理厂 结算
-       foreach($allPortInfo as $portId=>$portUid){
-            // $portUid = $portInfo['uid'];
-            $ships = self::$gameConf['port'][$portId]['ship'];
-            $gold = self::$gameConf['port'][$portId]['reward'];
-            if($portId <= 3){ // 港口
-                if($portShip >= $ships){
-                    $userList[$portUid] += $gold;
-                }
-            }else{ // 修理厂
-                if($repairShip >= $ships){
-                    $userList[$portUid] += $gold;
+       if(!empty($allPortInfo)){
+
+            foreach($allPortInfo as $portId=>$portUid){
+                // $portUid = $portInfo['uid'];
+                $ships = self::$gameConf['port'][$portId]['ship'];
+                $gold = self::$gameConf['port'][$portId]['reward'];
+                if($portId <= 3){ // 港口
+                    if($portShip >= $ships){
+                        $userList[$portUid] += $gold;
+                    }
+                }else{ // 修理厂
+                    if($repairShip >= $ships){
+                        $userList[$portUid] += $gold;
+                    }
                 }
             }
 
        }
+       
 
        // 保险赔偿
        if(!empty($insuranceInfo) && $repairShip > 0){
